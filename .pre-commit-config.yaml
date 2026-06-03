@@ -1,0 +1,39 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+
+  # Add linter hook based on what the project uses:
+  # Ruff (recommended for modern Python):
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+      - id: ruff-format
+
+  # Local hooks — backed by tracked scripts in scripts/git-hooks/, so they
+  # survive clones and `pre-commit install` (no untracked .git/hooks/ logic).
+  - repo: local
+    hooks:
+      - id: secret-pattern-scan
+        name: Block known API key patterns
+        entry: bash scripts/git-hooks/secret-scan.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: conventional-commit-msg
+        name: Enforce conventional commit message prefix
+        entry: bash scripts/git-hooks/commit-msg.sh
+        language: system
+        stages: [commit-msg]

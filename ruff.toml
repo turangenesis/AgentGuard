@@ -1,0 +1,7 @@
+# Ruff configuration — linter + formatter for AgentGuard.
+target-version = "py312"
+line-length = 100
+
+[lint]
+# pycodestyle (E), pyflakes (F), isort (I), pyupgrade (UP), flake8-bugbear (B)
+select = ["E", "F", "I", "UP", "B"]

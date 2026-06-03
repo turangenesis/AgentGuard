@@ -1,0 +1,7 @@
+# CODEOWNERS for engineering-kit-emre
+# https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Every file in this repo is owned by @lycrongenesis.
+# When a teammate is added, replace or supplement the entries below.
+
+* @lycrongenesis

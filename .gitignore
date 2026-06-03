@@ -1,0 +1,42 @@
+# Claude Code local settings — machine-specific, never commit
+.claude/settings.local.json
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Environment files — never commit secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Build artifacts
+dist/
+build/
+out/
+
+# Editor
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# Databases — AgentGuard uses SQLite; never commit local data or LangGraph checkpoints
+*.db
+*.sqlite
+*.sqlite3

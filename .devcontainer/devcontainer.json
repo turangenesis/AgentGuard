@@ -1,0 +1,41 @@
+{
+  // AgentGuard dev container — SINGLE-CONTAINER variant.
+  // Embedded SQLite, no sibling services. Choose "Reopen in Container" when prompted.
+
+  "name": "AgentGuard",
+
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+
+  "features": {
+    // GitHub CLI — the kit's open-pr / bootstrap-repo flows use `gh`.
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  // ── Globals mount — DO NOT REMOVE ────────────────────────────────────────
+  // Bind-mounts the host's ~/.claude so personal globals + ~/.claude/personal/<project>/
+  // state work identically inside the container. (Local Docker only; ignored in Codespaces.)
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
+  ],
+
+  // Installs ruff always; installs project deps once requirements.txt exists (post-implementation).
+  "postCreateCommand": "pip install --upgrade pip ruff && ([ -f requirements.txt ] && pip install -r requirements.txt || echo 'No requirements.txt yet — install after implementation')",
+
+  // FastAPI dashboard port.
+  "forwardPorts": [8000],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "anthropic.claude-code"
+      ]
+    }
+  },
+
+  // Run as the non-root 'vscode' user (matches the mount target path above).
+  "remoteUser": "vscode"
+}
