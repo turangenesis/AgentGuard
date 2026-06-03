@@ -24,13 +24,13 @@ worker agent → proposes action → guardian (rules → LLM) ─┬─ SAFE    
 
 ## Roadmap
 
-The MVP is the foundation; the differentiating work is the **AI-safety depth above it**:
+The MVP is the foundation; each stage above it hardens or extends the control plane:
 
 - **Stage 1 — Adversarial robustness** *(next)* — red-team the guardian against prompt injection; measure attack-hold rate vs. a baseline.
 - **Stage 2 — Real sandboxed execution** — stop a *real* `rm -rf`, not a simulated one.
 - **Stage 3 — Fleet control tower**, plus **remote approval** — approve / reject from your phone.
 
-Full arc, with the senior skill each stage proves → **[ROADMAP.md](ROADMAP.md)**.
+Full detail → **[ROADMAP.md](ROADMAP.md)**.
 
 ## Getting Started
 
