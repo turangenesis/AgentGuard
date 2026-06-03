@@ -5,7 +5,7 @@
 
 A **worker LLM agent** proposes actions (file, shell, git, deploy). A **guardian agent** — deterministic rules backed by LLM risk judgment — classifies each as **safe / approval-required / blocked**. Risky actions pause the agent mid-task (LangGraph `interrupt()`) and wait for a human to approve or reject. Every decision is written to an append-only audit log and shown on a live dashboard.
 
-> **Status:** initial setup — implementation in progress. See `docs/PLANS/current-feature-plan.md`.
+> **Status:** initial setup — implementation in progress. See the [roadmap](ROADMAP.md).
 
 ## Why
 
@@ -21,6 +21,16 @@ worker agent → proposes action → guardian (rules → LLM) ─┬─ SAFE    
                                                                        → resume / abort
                                           → append-only audit log + live dashboard
 ```
+
+## Roadmap
+
+The MVP is the foundation; the differentiating work is the **AI-safety depth above it**:
+
+- **Stage 1 — Adversarial robustness** *(next)* — red-team the guardian against prompt injection; measure attack-hold rate vs. a baseline.
+- **Stage 2 — Real sandboxed execution** — stop a *real* `rm -rf`, not a simulated one.
+- **Stage 3 — Fleet control tower**, plus **remote approval** — approve / reject from your phone.
+
+Full arc, with the senior skill each stage proves → **[ROADMAP.md](ROADMAP.md)**.
 
 ## Getting Started
 
@@ -53,7 +63,3 @@ Python 3.12 · LangGraph (`interrupt()` HITL + SqliteSaver) · langchain-anthrop
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
----
-
-*This repo was bootstrapped from a personal engineering kit; its usage docs are preserved in [docs/KIT.md](docs/KIT.md).*
