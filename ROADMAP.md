@@ -13,6 +13,7 @@ The MVP is the foundation. Each stage above it adds **one capability** that make
 |---|---|---|---|---|
 | **0 — Foundation** | *Brakes* | Worker + guardian + LangGraph `interrupt()` HITL + audit + eval + **MCP (protocol-native distribution surface)** + dashboard | Nothing executes without classification; risky actions can't run without a human | 🟡 In progress |
 | **1 — Adversarial Robustness** | *Brakes that survive an attacker* | Red-team the guardian against published benchmarks (AgentDojo, InjecAgent) + a curated command-injection corpus; hardening; a two-axis ASR/FPR security eval with the safety-utility Pareto curve | A policy layer that can't be talked into approving danger — the hard, open part of agent safety | ⬜ Planned (next) |
+| **⛓ Enforcement & Interception** | *The gate the agent can't walk around* | The no-bypass ladder: MCP gateway → Claude Code `PreToolUse` hook → (Stage 2) capability/sandbox mediation | An action the guard never sees is unguarded; enforcement = owning the chokepoint, not merely being an MCP option *(cross-cutting, foundational)* | ⬜ Cross-cutting |
 | **✦ Notifications & Remote Approval** | *Approve from your pocket* | Notify on pending (push/Slack/WhatsApp/SMS) + approve/reject from your phone | Approval no longer requires sitting at the terminal *(cross-cutting)* | ⬜ After Stage 1 |
 | **2 — Real Execution & Sandboxing** | *Brakes on real machinery* | Replace simulated side-effects with real execution inside an isolated sandbox | The firewall contains real damage, not a simulation | ⬜ Planned |
 | **3 — Fleet Control Tower** | *Brakes for a fleet* | Supervise N concurrent workers under one policy plane; learned escalation | One policy plane governs many agents — tool becomes platform | ⬜ Future |
@@ -53,6 +54,42 @@ A gate is only as good as its resistance to being talked around. This stage **at
 
 **Why it matters:** a policy layer that resists being socially-engineered into approving danger is the hard, still-open problem in agent safety — the difference between *gating* actions and *withstanding an adversary*. Reporting the safety/utility frontier (not a lone block-rate) is the difference between "97% blocked" and showing what that 97% costs.
 **Honest limit:** published benchmarks (AgentDojo, InjecAgent) carry weight; the curated command-injection set is hand-built and reported as such, never overclaimed.
+
+---
+
+## ⛓ Enforcement & Interception Completeness (no-bypass) · *the gate the agent can't walk around*
+
+**Cross-cutting, and the most foundational concern of all.** A control plane is only as
+strong as the actions it actually *sees* — an action that never reaches the guardian is, by
+definition, unguarded. Being an MCP server gives AgentGuard **reach** (any compatible agent
+*can* route through it); it does **not** give **enforcement**. Enforcement comes from
+**owning the chokepoint — being the sole path to the capability**, the way a firewall owns the
+wire. The **operator** configures this on their *own* agent (they want the brakes); the
+guarantee it buys is that the **agent** — including a prompt-injected one — cannot reach a side
+effect except through the gate. The threat model is "the agent goes rogue," not "the operator
+evades their own safety tool."
+
+**The interception ladder (weak → strong):**
+
+| Level | Mechanism | How the operator wires it | Strength · coverage |
+|---|---|---|---|
+| **1 · Cooperative** | AgentGuard is one MCP server among many; the agent is *asked* to submit actions | Add AgentGuard to the host's `mcpServers` config | Weak — the agent can call other tools directly |
+| **2 · MCP gateway** | AgentGuard is the **only** MCP server the host talks to; the real tool servers sit **behind** it and only approved calls are forwarded | Point the host at AgentGuard alone; list the real servers as AgentGuard's *downstream*, removing their direct host entries | Strong **for MCP tools** — the only path to them |
+| **3 · Host hook** | The host calls AgentGuard before **every** tool, built-ins included (e.g. Claude Code `PreToolUse`) | Enable AgentGuard's hook in the host's settings | Strong — *all* tools on that host, MCP or native |
+| **4 · Capability / sandbox** | The agent runs sandboxed *without* the real fs / net / deploy capability; AgentGuard mediates the syscall | Run the agent inside AgentGuard's sandbox (Stage 2) | **True no-bypass** — the OS enforces it |
+
+**What it adds**
+- A named **threat model** (unseen action = unguarded action) and a concrete enforcement path.
+- The demoable headline: **Claude Code gated by a `PreToolUse` hook** (Level 3 — a real, well-known agent that physically cannot act without clearing the gate) and an **MCP gateway** demo (Level 2 — the agent's only door to its tools is AgentGuard).
+
+**Why it matters:** this is the line between a *suggestion* and a *firewall*. No-bypass is the
+foundation every other guarantee rests on — robustness, audit, and approval all assume the
+action was actually seen.
+**Honest limit:** each level only covers what funnels through its chokepoint — an MCP gateway is
+blind to the host's *built-in* tools, a host hook is specific to that host, and only
+capability/sandbox mediation (Stage 2) is general and complete. Completeness is a ladder you
+climb, not a checkbox — and enforcement is *against the agent given the operator configured the
+gate*, never something imposed on an unwilling system.
 
 ---
 
