@@ -20,7 +20,7 @@ from langgraph.graph.message import add_messages
 from langgraph.types import interrupt
 
 from . import db
-from .policy.guardian import Judge, classify
+from .policy.guardian import Judge, classify, cost_stats
 from .tools import TOOLS_BY_NAME, action_from_tool_call
 from .types import ActionKind, ProposedAction
 
@@ -113,6 +113,16 @@ def build_graph(
     # ----- nodes ----------------------------------------------------------- #
     def worker(state: GraphState) -> dict:
         steps = state.get("steps", 0) + 1
+        thread_id = state["thread_id"]
+        if steps == 1:
+            # Open the run on the activity feed and create its cost row.
+            db.append_audit(
+                audit_db,
+                event="TASK_STARTED",
+                thread_id=thread_id,
+                detail=str(state.get("task", ""))[:500],
+            )
+            db.add_run_cost(audit_db, thread_id, task=state.get("task"))
         if steps > MAX_STEPS:
             return {
                 "messages": [AIMessage(content="[step limit reached — stopping]")],
@@ -120,8 +130,27 @@ def build_graph(
                 "steps": steps,
             }
         ai = worker_model.invoke(state["messages"])
+        # Per-run cost: record the worker's token usage (no-op for fake/demo workers).
+        usage = getattr(ai, "usage_metadata", None) or {}
+        if usage:
+            db.add_run_cost(
+                audit_db,
+                thread_id,
+                worker_in=usage.get("input_tokens", 0) or 0,
+                worker_out=usage.get("output_tokens", 0) or 0,
+            )
         tool_calls = getattr(ai, "tool_calls", None) or []
         if not tool_calls:
+            # The worker finished with a plain-text reply (e.g. an off-topic ask) —
+            # surface it on the activity feed instead of a blank screen.
+            text = ai.content if isinstance(ai.content, str) else str(ai.content)
+            db.append_audit(
+                audit_db,
+                event="AGENT_REPLY",
+                thread_id=thread_id,
+                reason="Agent responded with no action.",
+                detail=text[:500],
+            )
             return {"messages": [ai], "current": None, "steps": steps}
 
         action = action_from_tool_call(tool_calls[0])
@@ -142,7 +171,24 @@ def build_graph(
     def guardian(state: GraphState) -> dict:
         cur = state["current"]
         action = _dict_to_action(cur)
+        # Attribute any LLM-judge tokens spent on THIS action to the run, via the
+        # delta of the global judge meter. (Single-process/local: runs are sequential.)
+        before = cost_stats()
         decision = classify(action, judge)
+        after = cost_stats()
+        d_in = after["input_tokens"] - before["input_tokens"]
+        d_out = after["output_tokens"] - before["output_tokens"]
+        d_cr = after["cache_read_tokens"] - before["cache_read_tokens"]
+        d_cc = after["cache_creation_tokens"] - before["cache_creation_tokens"]
+        if d_in or d_out or d_cr or d_cc:
+            db.add_run_cost(
+                audit_db,
+                state["thread_id"],
+                judge_in=d_in,
+                judge_out=d_out,
+                cache_read=d_cr,
+                cache_create=d_cc,
+            )
         dec = {
             "verdict": decision.verdict.value,
             "reason": decision.reason,

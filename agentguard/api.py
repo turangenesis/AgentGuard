@@ -33,6 +33,7 @@ from langgraph.types import Command
 from pydantic import BaseModel
 
 from . import db
+from .cost import estimate_run_cost
 from .demo import DEMO_TASK, demo_worker
 from .graph import RECURSION_LIMIT, build_graph, initial_state, make_worker_model
 from .policy.guardian import Judge, cost_stats, default_judge
@@ -186,6 +187,22 @@ def get_pending() -> dict:
 @app.get("/feed")
 def get_feed(limit: int = 100) -> dict:
     return {"feed": db.recent_audit(AUDIT_DB, limit=limit)}
+
+
+@app.get("/runs")
+def get_runs(limit: int = 10) -> dict:
+    """Recent runs with a per-run token total and a $ estimate (list-price, not billed)."""
+    runs = []
+    for r in db.recent_runs(AUDIT_DB, limit=limit):
+        runs.append(
+            {
+                "thread_id": r["thread_id"],
+                "task": r["task"],
+                "started_at": r["started_at"],
+                **estimate_run_cost(r),
+            }
+        )
+    return {"runs": runs}
 
 
 def _resolve_decision(

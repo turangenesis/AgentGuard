@@ -67,6 +67,17 @@ def init_db(db_path: str = DEFAULT_DB) -> None:
                 expires_at REAL,
                 status     TEXT NOT NULL DEFAULT 'PENDING'
             );
+            CREATE TABLE IF NOT EXISTS run_cost (
+                thread_id    TEXT PRIMARY KEY,
+                task         TEXT,
+                started_at   REAL,
+                worker_in    INTEGER DEFAULT 0,
+                worker_out   INTEGER DEFAULT 0,
+                judge_in     INTEGER DEFAULT 0,
+                judge_out    INTEGER DEFAULT 0,
+                cache_read   INTEGER DEFAULT 0,
+                cache_create INTEGER DEFAULT 0
+            );
             """
         )
 
@@ -172,6 +183,60 @@ def resolve_pending(db_path: str, action_id: str, status: str) -> None:
     """Mark a pending action APPROVED / REJECTED / EXPIRED (no longer PENDING)."""
     with _conn(db_path) as conn:
         conn.execute("UPDATE pending SET status = ? WHERE action_id = ?", (status, action_id))
+
+
+# --------------------------------------------------------------------------- #
+# Per-run token accounting (for the dashboard cost line)
+# --------------------------------------------------------------------------- #
+def add_run_cost(
+    db_path: str,
+    thread_id: str,
+    *,
+    task: str | None = None,
+    worker_in: int = 0,
+    worker_out: int = 0,
+    judge_in: int = 0,
+    judge_out: int = 0,
+    cache_read: int = 0,
+    cache_create: int = 0,
+) -> None:
+    """Accumulate token usage for one run. First write sets task/started_at; the
+    rest add up. Zero-token calls (fake/demo workers) still create the row."""
+    now = time.time()
+    with _conn(db_path) as conn:
+        conn.execute(
+            """INSERT INTO run_cost
+                 (thread_id, task, started_at, worker_in, worker_out,
+                  judge_in, judge_out, cache_read, cache_create)
+               VALUES (?,?,?,?,?,?,?,?,?)
+               ON CONFLICT(thread_id) DO UPDATE SET
+                 worker_in    = worker_in    + excluded.worker_in,
+                 worker_out   = worker_out   + excluded.worker_out,
+                 judge_in     = judge_in     + excluded.judge_in,
+                 judge_out    = judge_out    + excluded.judge_out,
+                 cache_read   = cache_read   + excluded.cache_read,
+                 cache_create = cache_create + excluded.cache_create,
+                 task         = COALESCE(run_cost.task, excluded.task)""",
+            (
+                thread_id,
+                task,
+                now,
+                worker_in,
+                worker_out,
+                judge_in,
+                judge_out,
+                cache_read,
+                cache_create,
+            ),
+        )
+
+
+def recent_runs(db_path: str, limit: int = 10) -> list[dict[str, Any]]:
+    with _conn(db_path) as conn:
+        rows = conn.execute(
+            "SELECT * FROM run_cost ORDER BY started_at DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def stale_pending(db_path: str, now: float | None = None) -> list[dict[str, Any]]:

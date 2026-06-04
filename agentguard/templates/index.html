@@ -74,24 +74,22 @@
       </div>
     </section>
 
-    <!-- audit feed -->
-    <section>
-      <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400 mb-3">Decision feed</h2>
-      <div class="rounded-xl border border-slate-800 overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-900 text-slate-500 text-xs uppercase tracking-wide">
-            <tr>
-              <th class="text-left font-medium px-3 py-2">Time</th>
-              <th class="text-left font-medium px-3 py-2">Event</th>
-              <th class="text-left font-medium px-3 py-2">Action</th>
-              <th class="text-left font-medium px-3 py-2">Target</th>
-              <th class="text-left font-medium px-3 py-2 hidden sm:table-cell">Reason</th>
-            </tr>
-          </thead>
-          <tbody id="feed" class="divide-y divide-slate-800/70"></tbody>
-        </table>
-        <p id="feed-empty" class="text-sm text-slate-600 italic px-3 py-4">No decisions yet.</p>
+    <!-- per-run cost -->
+    <section class="mb-8">
+      <div class="flex items-center gap-2 mb-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Run cost</h2>
+        <span class="text-xs text-slate-600">≈ list-price estimate — the Anthropic console is the billed truth</span>
       </div>
+      <div id="runs" class="space-y-2">
+        <p id="runs-empty" class="text-sm text-slate-600 italic">No runs yet.</p>
+      </div>
+    </section>
+
+    <!-- activity feed -->
+    <section>
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400 mb-3">Activity</h2>
+      <div id="feed" class="space-y-2"></div>
+      <p id="feed-empty" class="text-sm text-slate-600 italic">Nothing yet — run the demo or a task.</p>
     </section>
 
     <footer class="mt-10 text-center text-xs text-slate-700">
@@ -113,12 +111,14 @@
       BLOCKED: "bg-rose-500/15 text-rose-300",
     };
     const EVENT_STYLE = {
+      TASK_STARTED: "bg-sky-500/15 text-sky-300",
       PROPOSED: "bg-slate-600/30 text-slate-300",
       EXECUTED: "bg-emerald-500/15 text-emerald-300",
       APPROVED: "bg-emerald-500/15 text-emerald-300",
       BLOCKED: "bg-rose-500/15 text-rose-300",
       REJECTED: "bg-rose-500/15 text-rose-300",
       EXPIRED: "bg-orange-500/15 text-orange-300",
+      AGENT_REPLY: "bg-violet-500/15 text-violet-300",
     };
     const SOURCE_LABEL = { rule: "deterministic rule", llm: "LLM judge", "fail-safe": "fail-safe default" };
 
@@ -204,21 +204,57 @@
       const empty = document.getElementById("feed-empty");
       if (!items.length) { empty.style.display = ""; body.innerHTML = ""; return; }
       empty.style.display = "none";
-      body.innerHTML = items.map((e) => `
-        <tr class="hover:bg-slate-900/40">
-          <td class="px-3 py-2 text-slate-500 whitespace-nowrap">${esc(fmtTime(e.ts))}</td>
-          <td class="px-3 py-2">${badge(e.event, EVENT_STYLE[e.event] || "bg-slate-700 text-slate-300")}</td>
-          <td class="px-3 py-2 text-slate-300 whitespace-nowrap">${esc(e.kind || "")}</td>
-          <td class="px-3 py-2 text-slate-300 truncate max-w-[10rem]">${esc(e.target || "")}</td>
-          <td class="px-3 py-2 text-slate-400 hidden sm:table-cell truncate max-w-[18rem]">${esc(e.reason || "")}</td>
-        </tr>`).join("");
+      body.innerHTML = items.map((e) => {
+        const action = (e.kind || e.target)
+          ? `<span class="text-slate-200">${esc(e.kind || "")}${e.target ? ` &rarr; ${esc(e.target)}` : ""}</span>`
+          : "";
+        const verdict = e.verdict ? badge(e.verdict.replace(/_/g, " "), VERDICT_STYLE[e.verdict] || "bg-slate-700 text-slate-300") : "";
+        const reason = e.reason ? `<div class="text-slate-400 mt-1">${esc(e.reason)}</div>` : "";
+        const detail = e.detail ? `<div class="text-slate-500 mt-1 font-mono text-xs whitespace-pre-wrap break-words">${esc(e.detail)}</div>` : "";
+        return `
+          <div class="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs text-slate-500 tabular-nums">${esc(fmtTime(e.ts))}</span>
+              ${badge(e.event.replace(/_/g, " "), EVENT_STYLE[e.event] || "bg-slate-700 text-slate-300")}
+              ${verdict}
+              ${action}
+            </div>
+            ${reason}${detail}
+          </div>`;
+      }).join("");
+    }
+
+    function renderRuns(runs) {
+      const wrap = document.getElementById("runs");
+      const empty = document.getElementById("runs-empty");
+      wrap.querySelectorAll(".run").forEach((r) => r.remove());
+      if (!runs.length) { empty.style.display = ""; return; }
+      empty.style.display = "none";
+      for (const r of runs) {
+        const el = document.createElement("div");
+        el.className = "run rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 flex items-center justify-between gap-3 text-sm";
+        const cache = r.cache_read_tokens > 0 ? `· cache ${r.cache_read_tokens.toLocaleString()} tok` : "· cache 0";
+        el.innerHTML = `
+          <div class="min-w-0">
+            <p class="text-slate-300 truncate">${esc(r.task || "(task)")}</p>
+            <p class="text-xs text-slate-600">${(r.total_tokens || 0).toLocaleString()} tokens ${cache}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-emerald-300 font-mono">≈ $${(r.usd_estimate || 0).toFixed(4)}</p>
+            <p class="text-xs text-slate-600">worker $${(r.worker_usd || 0).toFixed(4)} · judge $${(r.judge_usd || 0).toFixed(4)}</p>
+          </div>`;
+        wrap.appendChild(el);
+      }
     }
 
     async function refresh() {
       try {
-        const [p, f] = await Promise.all([api("/pending"), api("/feed?limit=50")]);
+        const [p, f, runs] = await Promise.all([
+          api("/pending"), api("/feed?limit=50"), api("/runs?limit=8"),
+        ]);
         renderPending(p.pending || []);
         renderFeed(f.feed || []);
+        renderRuns(runs.runs || []);
         setStatus(true);
       } catch (e) {
         setStatus(false);
