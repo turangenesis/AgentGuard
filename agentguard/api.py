@@ -1,0 +1,173 @@
+"""FastAPI surface over the AgentGuard graph.
+
+Endpoints:
+  POST /task                    start a worker run (background), returns thread_id
+  GET  /pending                 actions currently paused awaiting human approval
+  POST /actions/{id}/approve    resume the paused graph -> execute the action
+  POST /actions/{id}/reject     resume the paused graph -> deny the action
+  GET  /feed                    recent audit-log entries
+  GET  /                        health/info (the dashboard HTML is a later step)
+
+The run model mirrors the de-risked linchpin: POST /task starts the graph as a
+background task; it pauses + checkpoints at interrupt(); a *later* approve/reject
+opens a fresh graph instance and resumes it by thread_id via Command(resume=...).
+A background sweeper expires pending actions past their TTL (fail-safe = deny).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import contextlib
+import os
+import sqlite3
+import uuid
+from collections.abc import Callable
+from contextlib import asynccontextmanager
+from typing import Any
+
+from fastapi import BackgroundTasks, FastAPI, HTTPException
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.types import Command
+from pydantic import BaseModel
+
+from . import db
+from .graph import RECURSION_LIMIT, build_graph, initial_state, make_worker_model
+from .policy.guardian import Judge, default_judge
+
+# --- configuration (env-overridable) --------------------------------------- #
+AUDIT_DB = os.getenv("AGENTGUARD_DB", "agentguard.db")
+CHECKPOINT_DB = os.getenv("AGENTGUARD_CHECKPOINT_DB", "agentguard_checkpoints.db")
+TTL_MS = int(os.getenv("APPROVAL_TTL_MS", "120000"))
+SWEEP_INTERVAL_S = float(os.getenv("AGENTGUARD_SWEEP_INTERVAL_S", "5"))
+
+# --- injectable factories (tests override these to use a fake worker, no key) - #
+worker_factory: Callable[[], Any] = make_worker_model
+judge_factory: Callable[[], Judge | None] = default_judge
+
+
+def make_graph():
+    """Build a fresh graph instance + its own checkpointer connection.
+
+    One per background task — matches the de-risked cross-call resume pattern and
+    sidesteps cross-thread SQLite sharing. Caller must close the returned connection.
+    """
+    conn = sqlite3.connect(CHECKPOINT_DB, check_same_thread=False)
+    graph = build_graph(
+        worker_model=worker_factory(),
+        judge=judge_factory(),
+        checkpointer=SqliteSaver(conn),
+        audit_db=AUDIT_DB,
+        ttl_ms=TTL_MS,
+    )
+    return graph, conn
+
+
+def _config(thread_id: str) -> dict:
+    return {
+        "configurable": {"thread_id": thread_id},
+        "recursion_limit": RECURSION_LIMIT,
+    }
+
+
+def _start_run(task: str, thread_id: str) -> None:
+    graph, conn = make_graph()
+    try:
+        graph.invoke(initial_state(task, thread_id), _config(thread_id))
+    finally:
+        conn.close()
+
+
+def _resume_run(thread_id: str, payload: dict) -> None:
+    graph, conn = make_graph()
+    try:
+        graph.invoke(Command(resume=payload), _config(thread_id))
+    finally:
+        conn.close()
+
+
+async def _ttl_sweeper() -> None:
+    """Expire pending actions past their TTL by resuming their graph as a denial."""
+    while True:
+        await asyncio.sleep(SWEEP_INTERVAL_S)
+        try:
+            stale = db.stale_pending(AUDIT_DB)
+        except Exception:
+            continue
+        for row in stale:
+            payload = {"approved": False, "status": "EXPIRED"}
+            await asyncio.to_thread(_resume_run, row["thread_id"], payload)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db.init_db(AUDIT_DB)
+    sweeper = asyncio.create_task(_ttl_sweeper())
+    try:
+        yield
+    finally:
+        sweeper.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await sweeper
+
+
+app = FastAPI(title="AgentGuard", version="0.1.0", lifespan=lifespan)
+
+
+class TaskRequest(BaseModel):
+    task: str
+
+
+@app.get("/")
+def root() -> dict:
+    return {
+        "service": "AgentGuard",
+        "tagline": "gives AI coding agents brakes",
+        "endpoints": [
+            "/task",
+            "/pending",
+            "/actions/{id}/approve",
+            "/actions/{id}/reject",
+            "/feed",
+        ],
+        "pending": len(db.list_pending(AUDIT_DB)),
+    }
+
+
+@app.post("/task")
+def submit_task(req: TaskRequest, background: BackgroundTasks) -> dict:
+    thread_id = uuid.uuid4().hex
+    background.add_task(_start_run, req.task, thread_id)
+    return {"thread_id": thread_id, "status": "started"}
+
+
+@app.get("/pending")
+def get_pending() -> dict:
+    return {"pending": db.list_pending(AUDIT_DB)}
+
+
+@app.get("/feed")
+def get_feed(limit: int = 100) -> dict:
+    return {"feed": db.recent_audit(AUDIT_DB, limit=limit)}
+
+
+def _resolve_decision(
+    action_id: str, *, approved: bool, status: str, background: BackgroundTasks
+) -> dict:
+    row = db.get_pending(AUDIT_DB, action_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"no such pending action: {action_id}")
+    if row["status"] != "PENDING":
+        raise HTTPException(status_code=409, detail=f"action already {row['status']}")
+    payload = {"approved": approved, "status": status}
+    background.add_task(_resume_run, row["thread_id"], payload)
+    return {"action_id": action_id, "status": status, "thread_id": row["thread_id"]}
+
+
+@app.post("/actions/{action_id}/approve")
+def approve(action_id: str, background: BackgroundTasks) -> dict:
+    return _resolve_decision(action_id, approved=True, status="APPROVED", background=background)
+
+
+@app.post("/actions/{action_id}/reject")
+def reject(action_id: str, background: BackgroundTasks) -> dict:
+    return _resolve_decision(action_id, approved=False, status="REJECTED", background=background)

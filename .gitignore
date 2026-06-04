@@ -12,6 +12,10 @@
 .env.*.local
 *.env
 
+# Exception: sample-target/.env is a DELIBERATE FAKE fixture (no real secrets) so the
+# guardian has a real on-disk secret file to block reads against. Keep it tracked.
+!sample-target/.env
+
 # Node
 node_modules/
 npm-debug.log*

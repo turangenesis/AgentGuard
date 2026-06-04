@@ -1,0 +1,23 @@
+{
+  "name": "taskflow-api",
+  "version": "1.4.2",
+  "private": true,
+  "description": "REST service for managing tasks and projects",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "tsx": "^4.10.0"
+  }
+}
