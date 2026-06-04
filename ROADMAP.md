@@ -91,9 +91,9 @@ One guardian policy plane; many workers.
 
 **What it adds**
 - Supervise **N concurrent worker agents**; the dashboard becomes a control tower — every agent's live state, pending approvals across the fleet, per-agent audit.
-- **Policy-as-data per repo/team**; **learned escalation** — the guardian adapts thresholds from the human approve/reject history (which actions a reviewer always approves vs. always blocks).
+- **Policy-as-data per repo/team**; **a self-improving policy plane** — the guardian closes the loop on its own history rather than staying a static ruleset: it adapts thresholds from the human approve/reject record (which actions a reviewer always waves through vs. always blocks), and a Claude pass reads the audit log + adversarial misses to *propose* new rules and hardening, re-evaluated before they ship. The gate learns from every human decision and every attack it let slip.
 
-**Why it matters:** one policy plane governing many agents is the step from a tool to a platform.
+**Why it matters:** one policy plane governing many agents is the step from a tool to a platform — and a gate that *improves itself* from its own audit trail is the step from a fixed filter to a control system.
 
 ---
 
@@ -107,6 +107,7 @@ Hosted, multi-tenant, per-team policy and SSO; an audit/compliance surface; noti
 
 - **Real where it's the claim, simulated where it's plumbing** — the multi-agent loop, the `interrupt()` HITL, and (Stage 1+) the adversarial eval are real and non-negotiable; convenience layers are clearly labeled.
 - **Fail safe** — unknown action → human review; stalled approval → TTL-expire to *deny*.
+- **Local-first** — the engine, audit log, and dashboard run entirely on your machine (SQLite, no SaaS dependency). Every record of a risky agent action stays local by default; any cloud surface is opt-in, never required. The control plane and its evidence trail are yours.
 - **Measure, don't assert** — every safety claim ships with an eval number and a baseline; small hand-labeled sets are described as such.
 - **Ship each stage standalone** — every stage is demoable on its own and adds exactly one capability.
 
