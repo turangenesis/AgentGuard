@@ -14,6 +14,7 @@ no API key. ``default_judge()`` builds a real Claude-backed judge lazily.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from collections.abc import Callable
@@ -21,8 +22,59 @@ from collections.abc import Callable
 from ..types import DecisionSource, GuardianDecision, ProposedAction, Verdict
 from .rules import match_rules
 
+_logger = logging.getLogger(__name__)
+
 # A judge takes a proposed action and returns a decision, or None if it cannot decide.
 Judge = Callable[[ProposedAction], GuardianDecision | None]
+
+# --------------------------------------------------------------------------- #
+# Cost meter — cumulative token usage for the LLM judge, incl. prompt-cache hits.
+# Surfaced at GET /api so cost/cache behaviour is observable, not assumed. The
+# guardian's deterministic rules cost nothing; only the no-rule middle spends tokens.
+# --------------------------------------------------------------------------- #
+_COST = {
+    "judge_calls": 0,
+    "input_tokens": 0,  # uncached input billed at full price
+    "output_tokens": 0,
+    "cache_creation_tokens": 0,  # first write of a cacheable prefix (1.25x base)
+    "cache_read_tokens": 0,  # prefix served from cache (0.1x base)
+}
+
+
+def cost_stats() -> dict:
+    """Snapshot of cumulative judge token usage + the prompt-cache hit rate.
+
+    cache_hit_rate is cache_read / (all input tokens). It stays 0.0 if caching never
+    engages — e.g. the stable prefix is below the model's minimum cacheable length —
+    which is exactly the thing we want to *measure* rather than claim.
+    """
+    stats = dict(_COST)
+    total_in = stats["input_tokens"] + stats["cache_read_tokens"] + stats["cache_creation_tokens"]
+    stats["cache_hit_rate"] = round(stats["cache_read_tokens"] / total_in, 3) if total_in else 0.0
+    return stats
+
+
+def _record_usage(reply: object) -> None:
+    """Accumulate token usage from one judge reply (best-effort; never raises)."""
+    usage = getattr(reply, "usage_metadata", None) or {}
+    details = usage.get("input_token_details", {}) or {}
+    in_tok = usage.get("input_tokens", 0) or 0
+    out_tok = usage.get("output_tokens", 0) or 0
+    cache_create = details.get("cache_creation", 0) or 0
+    cache_read = details.get("cache_read", 0) or 0
+    _COST["judge_calls"] += 1
+    _COST["input_tokens"] += in_tok
+    _COST["output_tokens"] += out_tok
+    _COST["cache_creation_tokens"] += cache_create
+    _COST["cache_read_tokens"] += cache_read
+    _logger.info(
+        "guardian judge tokens: input=%s output=%s cache_created=%s cache_read=%s",
+        in_tok,
+        out_tok,
+        cache_create,
+        cache_read,
+    )
+
 
 _FAIL_SAFE = GuardianDecision(
     verdict=Verdict.APPROVAL_REQUIRED,
@@ -122,6 +174,7 @@ def make_llm_judge(model: str = _DEFAULT_MODEL) -> Judge:
             )
         )
         reply = llm.invoke([system, human])
+        _record_usage(reply)
         text = reply.content if isinstance(reply.content, str) else str(reply.content)
         return _parse_judgment(text)
 

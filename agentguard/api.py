@@ -35,7 +35,7 @@ from pydantic import BaseModel
 from . import db
 from .demo import DEMO_TASK, demo_worker
 from .graph import RECURSION_LIMIT, build_graph, initial_state, make_worker_model
-from .policy.guardian import Judge, default_judge
+from .policy.guardian import Judge, cost_stats, default_judge
 
 # --- configuration (env-overridable) --------------------------------------- #
 AUDIT_DB = os.getenv("AGENTGUARD_DB", "agentguard.db")
@@ -158,6 +158,7 @@ def api_info() -> dict:
             "/feed",
         ],
         "pending": len(db.list_pending(AUDIT_DB)),
+        "judge_cost": cost_stats(),
     }
 
 
