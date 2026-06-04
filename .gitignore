@@ -42,5 +42,8 @@ out/
 
 # Databases — AgentGuard uses SQLite; never commit local data or LangGraph checkpoints
 *.db
+*.db-wal
+*.db-shm
+*.db-journal
 *.sqlite
 *.sqlite3
