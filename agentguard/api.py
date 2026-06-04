@@ -23,14 +23,17 @@ import sqlite3
 import uuid
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 from pydantic import BaseModel
 
 from . import db
+from .demo import DEMO_TASK, demo_worker
 from .graph import RECURSION_LIMIT, build_graph, initial_state, make_worker_model
 from .policy.guardian import Judge, default_judge
 
@@ -40,20 +43,27 @@ CHECKPOINT_DB = os.getenv("AGENTGUARD_CHECKPOINT_DB", "agentguard_checkpoints.db
 TTL_MS = int(os.getenv("APPROVAL_TTL_MS", "120000"))
 SWEEP_INTERVAL_S = float(os.getenv("AGENTGUARD_SWEEP_INTERVAL_S", "5"))
 
+_DASHBOARD = Path(__file__).resolve().parent / "templates" / "index.html"
+
 # --- injectable factories (tests override these to use a fake worker, no key) - #
 worker_factory: Callable[[], Any] = make_worker_model
 judge_factory: Callable[[], Judge | None] = default_judge
 
+# Thread ids started in demo mode, so their later resumes reuse the scripted worker
+# (no API key) instead of the real LLM. In-memory: a single-process dev convenience.
+_DEMO_THREADS: set[str] = set()
 
-def make_graph():
+
+def make_graph(worker: Any = None):
     """Build a fresh graph instance + its own checkpointer connection.
 
     One per background task — matches the de-risked cross-call resume pattern and
     sidesteps cross-thread SQLite sharing. Caller must close the returned connection.
+    Pass ``worker`` to override the factory (used for key-free demo runs).
     """
     conn = sqlite3.connect(CHECKPOINT_DB, check_same_thread=False)
     graph = build_graph(
-        worker_model=worker_factory(),
+        worker_model=worker if worker is not None else worker_factory(),
         judge=judge_factory(),
         checkpointer=SqliteSaver(conn),
         audit_db=AUDIT_DB,
@@ -77,8 +87,18 @@ def _start_run(task: str, thread_id: str) -> None:
         conn.close()
 
 
+def _start_demo_run(thread_id: str) -> None:
+    """Start a scripted, key-free run that hits SAFE, BLOCKED, and APPROVAL in turn."""
+    graph, conn = make_graph(worker=demo_worker())
+    try:
+        graph.invoke(initial_state(DEMO_TASK, thread_id), _config(thread_id))
+    finally:
+        conn.close()
+
+
 def _resume_run(thread_id: str, payload: dict) -> None:
-    graph, conn = make_graph()
+    worker = demo_worker() if thread_id in _DEMO_THREADS else None
+    graph, conn = make_graph(worker=worker)
     try:
         graph.invoke(Command(resume=payload), _config(thread_id))
     finally:
@@ -117,13 +137,21 @@ class TaskRequest(BaseModel):
     task: str
 
 
-@app.get("/")
-def root() -> dict:
+@app.get("/", response_class=HTMLResponse)
+def dashboard() -> HTMLResponse:
+    """The live control panel — watch the feed and approve/reject paused actions."""
+    return HTMLResponse(_DASHBOARD.read_text(encoding="utf-8"))
+
+
+@app.get("/api")
+def api_info() -> dict:
     return {
         "service": "AgentGuard",
         "tagline": "gives AI coding agents brakes",
+        "dashboard": "/",
         "endpoints": [
             "/task",
+            "/demo",
             "/pending",
             "/actions/{id}/approve",
             "/actions/{id}/reject",
@@ -138,6 +166,15 @@ def submit_task(req: TaskRequest, background: BackgroundTasks) -> dict:
     thread_id = uuid.uuid4().hex
     background.add_task(_start_run, req.task, thread_id)
     return {"thread_id": thread_id, "status": "started"}
+
+
+@app.post("/demo")
+def submit_demo(background: BackgroundTasks) -> dict:
+    """Start a key-free scripted run so the dashboard is demoable without an LLM."""
+    thread_id = uuid.uuid4().hex
+    _DEMO_THREADS.add(thread_id)
+    background.add_task(_start_demo_run, thread_id)
+    return {"thread_id": thread_id, "status": "started", "mode": "demo"}
 
 
 @app.get("/pending")

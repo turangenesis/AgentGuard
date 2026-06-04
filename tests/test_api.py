@@ -41,10 +41,41 @@ def _wait_for(fn, timeout=5.0):
     return fn()
 
 
-def test_root_reports_service(client):
-    body = client.get("/").json()
+def test_root_serves_dashboard(client):
+    res = client.get("/")
+    assert res.status_code == 200
+    assert "text/html" in res.headers["content-type"]
+    assert "AgentGuard" in res.text
+
+
+def test_api_info_reports_service(client):
+    body = client.get("/api").json()
     assert body["service"] == "AgentGuard"
     assert "/task" in body["endpoints"]
+
+
+def test_demo_run_executes_blocks_and_pauses(client):
+    """One /demo call: SAFE read executes, destructive shell BLOCKED, deploy pauses."""
+    started = client.post("/demo")
+    assert started.status_code == 200
+    assert started.json()["mode"] == "demo"
+
+    pending = _wait_for(lambda: client.get("/pending").json()["pending"])
+    assert len(pending) == 1
+    assert pending[0]["kind"] == "deploy"
+    assert pending[0]["target"] == "production"
+
+    # The earlier two actions already resolved without a human (no API key used).
+    feed = client.get("/feed").json()["feed"]
+    events = {(e["kind"], e["event"]) for e in feed}
+    assert ("read", "EXECUTED") in events
+    assert ("shell", "BLOCKED") in events
+
+    # Approving the demo's deploy resumes its scripted worker (still no key) to the end.
+    action_id = pending[0]["action_id"]
+    assert client.post(f"/actions/{action_id}/approve").status_code == 200
+    _wait_for(lambda: not client.get("/pending").json()["pending"])
+    assert db.get_pending(client.audit_db, action_id)["status"] == "APPROVED"
 
 
 def test_task_pauses_and_approve_resumes_and_executes(client):

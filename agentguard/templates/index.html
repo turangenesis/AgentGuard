@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentGuard — control panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-ring { 0% { opacity: .9 } 50% { opacity: .35 } 100% { opacity: .9 } }
+    .pending-glow { animation: pulse-ring 1.6s ease-in-out infinite; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen antialiased">
+  <div class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- header -->
+    <header class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">
+          Agent<span class="text-emerald-400">Guard</span>
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          Gives AI coding agents <span class="text-slate-200 font-medium">brakes</span> —
+          every action is classified <span class="text-emerald-400">safe</span> /
+          <span class="text-amber-400">approval-required</span> /
+          <span class="text-rose-400">blocked</span> before it runs.
+        </p>
+      </div>
+      <div id="status-dot" class="flex items-center gap-2 text-xs text-slate-500">
+        <span class="w-2 h-2 rounded-full bg-slate-600"></span><span>connecting…</span>
+      </div>
+    </header>
+
+    <!-- controls -->
+    <section class="grid sm:grid-cols-2 gap-4 mb-8">
+      <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <h2 class="text-sm font-semibold text-white mb-1">Run the demo</h2>
+        <p class="text-xs text-slate-400 mb-3">
+          No API key needed. A scripted agent attempts a safe read, a destructive
+          <code class="text-rose-300">rm&nbsp;-rf</code>, and a production deploy.
+        </p>
+        <button id="demo-btn" onclick="runDemo()"
+          class="w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm py-2 transition disabled:opacity-50">
+          ▶ Run demo
+        </button>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <h2 class="text-sm font-semibold text-white mb-1">Real agent task</h2>
+        <p class="text-xs text-slate-400 mb-3">
+          Drives the real worker LLM. Requires <code class="text-slate-300">ANTHROPIC_API_KEY</code>.
+        </p>
+        <div class="flex gap-2">
+          <input id="task-input" type="text" placeholder="e.g. read the README and deploy to prod"
+            class="flex-1 rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm
+                   text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500" />
+          <button onclick="runTask()"
+            class="rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold text-sm px-4 transition">
+            Run
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- pending approvals -->
+    <section class="mb-8">
+      <div class="flex items-center gap-2 mb-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Awaiting your approval</h2>
+        <span id="pending-count" class="text-xs rounded-full bg-amber-500/15 text-amber-300 px-2 py-0.5">0</span>
+      </div>
+      <div id="pending" class="space-y-3">
+        <p id="pending-empty" class="text-sm text-slate-600 italic">
+          Nothing paused right now. Run the demo and a production deploy will land here.
+        </p>
+      </div>
+    </section>
+
+    <!-- audit feed -->
+    <section>
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400 mb-3">Decision feed</h2>
+      <div class="rounded-xl border border-slate-800 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-900 text-slate-500 text-xs uppercase tracking-wide">
+            <tr>
+              <th class="text-left font-medium px-3 py-2">Time</th>
+              <th class="text-left font-medium px-3 py-2">Event</th>
+              <th class="text-left font-medium px-3 py-2">Action</th>
+              <th class="text-left font-medium px-3 py-2">Target</th>
+              <th class="text-left font-medium px-3 py-2 hidden sm:table-cell">Reason</th>
+            </tr>
+          </thead>
+          <tbody id="feed" class="divide-y divide-slate-800/70"></tbody>
+        </table>
+        <p id="feed-empty" class="text-sm text-slate-600 italic px-3 py-4">No decisions yet.</p>
+      </div>
+    </section>
+
+    <footer class="mt-10 text-center text-xs text-slate-700">
+      AgentGuard · polling every second · <a href="/api" class="hover:text-slate-500 underline">/api</a>
+    </footer>
+  </div>
+
+  <script>
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    const fmtTime = (ts) => {
+      try { return new Date(ts * 1000).toLocaleTimeString(); } catch { return ""; }
+    };
+
+    const VERDICT_STYLE = {
+      SAFE: "bg-emerald-500/15 text-emerald-300",
+      APPROVAL_REQUIRED: "bg-amber-500/15 text-amber-300",
+      BLOCKED: "bg-rose-500/15 text-rose-300",
+    };
+    const EVENT_STYLE = {
+      PROPOSED: "bg-slate-600/30 text-slate-300",
+      EXECUTED: "bg-emerald-500/15 text-emerald-300",
+      APPROVED: "bg-emerald-500/15 text-emerald-300",
+      BLOCKED: "bg-rose-500/15 text-rose-300",
+      REJECTED: "bg-rose-500/15 text-rose-300",
+      EXPIRED: "bg-orange-500/15 text-orange-300",
+    };
+    const SOURCE_LABEL = { rule: "deterministic rule", llm: "LLM judge", "fail-safe": "fail-safe default" };
+
+    const badge = (text, cls) =>
+      `<span class="inline-block rounded px-2 py-0.5 text-xs font-medium ${cls}">${esc(text)}</span>`;
+
+    async function api(url, opts) {
+      const r = await fetch(url, opts);
+      if (!r.ok) throw new Error(`${url} -> ${r.status}`);
+      return r.json();
+    }
+
+    function setStatus(ok) {
+      const el = document.getElementById("status-dot");
+      el.innerHTML = ok
+        ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>live</span>'
+        : '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>offline</span>';
+    }
+
+    async function runDemo() {
+      const btn = document.getElementById("demo-btn");
+      btn.disabled = true; btn.textContent = "running…";
+      try { await api("/demo", { method: "POST" }); } catch (e) { /* shown via status */ }
+      setTimeout(() => { btn.disabled = false; btn.textContent = "▶ Run demo"; refresh(); }, 600);
+    }
+
+    async function runTask() {
+      const input = document.getElementById("task-input");
+      const task = input.value.trim();
+      if (!task) return;
+      try {
+        await api("/task", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task }),
+        });
+        input.value = "";
+      } catch (e) { /* shown via status */ }
+      setTimeout(refresh, 400);
+    }
+
+    async function decide(id, action) {
+      try { await api(`/actions/${id}/${action}`, { method: "POST" }); }
+      catch (e) { /* already resolved / unknown — refresh will reconcile */ }
+      refresh();
+    }
+
+    function renderPending(items) {
+      const wrap = document.getElementById("pending");
+      const empty = document.getElementById("pending-empty");
+      document.getElementById("pending-count").textContent = items.length;
+      if (!items.length) { empty.style.display = ""; wrap.querySelectorAll(".card").forEach(c => c.remove()); return; }
+      empty.style.display = "none";
+      wrap.querySelectorAll(".card").forEach(c => c.remove());
+      for (const p of items) {
+        const card = document.createElement("div");
+        card.className = "card pending-glow rounded-xl border border-amber-500/40 bg-amber-500/[0.04] p-4";
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                ${badge("APPROVAL REQUIRED", VERDICT_STYLE.APPROVAL_REQUIRED)}
+                <span class="text-xs text-slate-500">${esc(SOURCE_LABEL[p.source] || p.source || "")}</span>
+              </div>
+              <p class="text-sm text-white font-medium truncate">
+                <span class="text-slate-400">${esc(p.kind)}</span> &rarr; ${esc(p.target || "(none)")}
+              </p>
+              <p class="text-sm text-slate-300 mt-1">${esc(p.reason)}</p>
+            </div>
+            <div class="flex flex-col gap-2 shrink-0">
+              <button onclick="decide('${esc(p.action_id)}','approve')"
+                class="rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold px-4 py-1.5 transition">Approve</button>
+              <button onclick="decide('${esc(p.action_id)}','reject')"
+                class="rounded-lg bg-rose-500 hover:bg-rose-400 text-white text-sm font-semibold px-4 py-1.5 transition">Reject</button>
+            </div>
+          </div>`;
+        wrap.appendChild(card);
+      }
+    }
+
+    function renderFeed(items) {
+      const body = document.getElementById("feed");
+      const empty = document.getElementById("feed-empty");
+      if (!items.length) { empty.style.display = ""; body.innerHTML = ""; return; }
+      empty.style.display = "none";
+      body.innerHTML = items.map((e) => `
+        <tr class="hover:bg-slate-900/40">
+          <td class="px-3 py-2 text-slate-500 whitespace-nowrap">${esc(fmtTime(e.ts))}</td>
+          <td class="px-3 py-2">${badge(e.event, EVENT_STYLE[e.event] || "bg-slate-700 text-slate-300")}</td>
+          <td class="px-3 py-2 text-slate-300 whitespace-nowrap">${esc(e.kind || "")}</td>
+          <td class="px-3 py-2 text-slate-300 truncate max-w-[10rem]">${esc(e.target || "")}</td>
+          <td class="px-3 py-2 text-slate-400 hidden sm:table-cell truncate max-w-[18rem]">${esc(e.reason || "")}</td>
+        </tr>`).join("");
+    }
+
+    async function refresh() {
+      try {
+        const [p, f] = await Promise.all([api("/pending"), api("/feed?limit=50")]);
+        renderPending(p.pending || []);
+        renderFeed(f.feed || []);
+        setStatus(true);
+      } catch (e) {
+        setStatus(false);
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 1000);
+  </script>
+</body>
+</html>
