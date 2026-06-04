@@ -56,6 +56,10 @@ python -m eval.run_eval                 # guardian confusion matrix + recall / p
 bash scripts/smoke-check.sh             # scaffolding checks (+ pytest once implemented)
 ```
 
+Evaluation is **cost-aware by design** — prompt caching, the Message Batches API,
+pre-recorded worker traces, and stratified sampling, with a built-in judge cost/cache meter
+(`GET /api → judge_cost`). Methodology and targets → **[docs/EVAL.md](docs/EVAL.md)**.
+
 ## Stack
 
 Python 3.12 · LangGraph (`interrupt()` HITL + SqliteSaver) · langchain-anthropic (Claude) · FastAPI · SQLite · MCP (FastMCP) · LangSmith · Tailwind-CDN dashboard.

@@ -48,6 +48,7 @@ A gate is only as good as its resistance to being talked around. This stage **at
   - *Latency overhead* — p50 / p95 / p99 of the guard decision, not a single number.
   - *Per-attack-class confusion matrix* — where it fails, not just that it fails.
 - **The safety/utility Pareto curve** — sweep guard aggressiveness, plot ASR and FPR together, show the frontier. *Prerequisite:* the guard must first be made **parametric** (e.g. a judge confidence score to threshold, or a tunable fail-safe default) — today's verdict is categorical, with no dial to sweep.
+- **A cost-aware eval harness** (see [`docs/EVAL.md`](docs/EVAL.md)) — two-tier design (static guardian replay vs. occasional live runs), prompt caching, the Message Batches API (offline only), pre-recorded worker traces, model tiering, and stratified sampling, with cost predicted via free `count_tokens` and observed via the built-in `judge_cost` meter. Thousands of attack cases evaluated for a *predicted, measured* cost — not a naive full-price run.
 
 **Why it matters:** a policy layer that resists being socially-engineered into approving danger is the hard, still-open problem in agent safety — the difference between *gating* actions and *withstanding an adversary*. Reporting the safety/utility frontier (not a lone block-rate) is the difference between "97% blocked" and showing what that 97% costs.
 **Honest limit:** published benchmarks (AgentDojo, InjecAgent) carry weight; the curated command-injection set is hand-built and reported as such, never overclaimed.
