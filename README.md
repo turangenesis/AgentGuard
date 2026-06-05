@@ -3,7 +3,7 @@
 **A calibrated execution firewall for AI coding agents.**
 *OpenClaw gives agents hands. AgentGuard gives them brakes.*
 
-> **The thesis:** Stopping an agent is a *framework feature* — a brake pedal. Knowing **when** to stop it, and **proving** the decision is calibrated, is the product. A pause button is plumbing (LangGraph hands it to you for free); what it *can't* tell you is whether your approval policy is too paranoid (humans rubber-stamp every alert until the gate is useless) or too lax (something blows up). AgentGuard makes that judgment **measurable and tunable**.
+> **The thesis:** Stopping an agent is a *framework feature* — a brake pedal. Knowing **when** to stop it, and being able to **measure and tune** that judgment, is the product. A pause button is plumbing (LangGraph hands it to you for free); what it *can't* tell you is whether your approval policy is too paranoid (humans rubber-stamp every alert until the gate is useless) or too lax (something blows up). AgentGuard makes that judgment **measurable and tunable**.
 >
 > *Anyone can stop an agent. AgentGuard knows when to — and proves it.*
 
@@ -33,12 +33,19 @@ The gate is the **substrate**. The **moat** is the layer above it: measuring whe
 The guardian emits a **0–100 risk score** per action. Sweeping the auto-allow-vs-escalate threshold produces the **safety/utility tradeoff curve** — missed-danger rate vs false-alarm rate — under an **asymmetric cost matrix** (auto-allowing danger is catastrophic; a false alarm is annoyance).
 
 ```bash
-python -m eval.calibrate     # prints the sweep + cost-minimizing & Neyman-Pearson points + AURC
+python -m eval.calibrate            # prints the sweep + cost-min & Neyman-Pearson points + AURC
+python -m eval.calibrate --plot     # also writes eval/calibration.png
 ```
 
-On the current **30-row hand-labeled set** (small, reported as such — not a published benchmark), the LLM-scored guardian hits a sweet spot at **0% dangerous-miss with ~10% false-alarm**, and the curve shows exactly what each click of "more permissive" costs in missed danger. That's the artifact: *pick your risk tolerance with data, not vibes.* Deeper rigor — a measured noise floor (kappa), an adversarial/evasion set, published benchmarks (AgentDojo, InjecAgent), and frontier methods (conformal prediction, trajectory-level guarding) — is **[Stage 1](ROADMAP.md)**.
+![AgentGuard calibration curve — safety/utility tradeoff and expected cost vs threshold](eval/calibration.png)
 
-> **The throughline:** *Stopping an agent is a framework feature. Knowing when to stop it — selective classification under asymmetric cost with label noise — is the problem, and here's the curve that proves mine is calibrated.*
+On the current **30-row hand-labeled set** (small, reported as such — not a published benchmark), the LLM-scored guardian hits a sweet spot at **0% dangerous-miss with ~10% false-alarm**, and the curve shows exactly what each click of "more permissive" costs in missed danger. That's the artifact: *pick your risk tolerance with data, not vibes.*
+
+**The noise floor — why a single "ground truth" is a lie.** "Is this action risky?" is *subjective*: even careful reviewers disagree, so a guard can't be scored against one objective label. `python -m eval.noise_floor` has three LLM-persona reviewers (cautious / pragmatic / strict-compliance) label the set and reports **Fleiss' κ ≈ 0.53** — only *moderate* agreement. That's the *irreducible* disagreement, and it's the honest yardstick: a guard that agrees with reviewers as often as they agree with each other is at "human" level. *(Personas are a **proxy** for human annotators — reported as such, not the true human floor.)*
+
+> **Precision note (so the claim is exact):** the curve is **operating-point analysis under asymmetric cost** (selective classification) — *not yet formal calibration* in the ECE/reliability sense. "Calibration" is the theme; the claim is precisely the measured tradeoff + noise floor above. Formal calibration metrics (ECE, Brier, reliability diagrams), an adversarial/evasion set, published benchmarks (AgentDojo, InjecAgent), and frontier methods (conformal prediction, trajectory-level guarding) are deeper rigor on the roadmap — see **[Stage 1](ROADMAP.md)**.
+
+> **The throughline:** *Stopping an agent is a framework feature. Knowing when to stop it — selective classification under asymmetric cost with label noise — is the problem, and here's the curve that shows the tradeoff and lets me set the operating point with data.*
 
 ## Getting Started
 
@@ -60,7 +67,8 @@ The dashboard shows a live activity feed, pending approvals with the guardian's 
 ```bash
 pytest                                  # unit + integration (no API key needed)
 python -m eval.run_eval                 # guardian confusion matrix + recall / precision
-python -m eval.calibrate                # the calibration curve (cost matrix, sweep, NP point, AURC)
+python -m eval.calibrate --plot         # the calibration curve (cost matrix, sweep, NP point, AURC) + PNG
+python -m eval.noise_floor              # inter-annotator kappa — the noise floor (LLM-persona proxy)
 bash scripts/smoke-check.sh             # key-file checks + pytest
 ```
 

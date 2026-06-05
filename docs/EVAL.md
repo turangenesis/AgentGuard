@@ -32,9 +32,11 @@ and the deliverable is a **curve**, not an accuracy number.
   false-alarm rate is Y%."* The harness reports the lowest-false-alarm threshold under a target
   miss rate, plus the **cost-minimizing** threshold.
 
-**Tier 2 — cheap rigor (planned):** inter-annotator **kappa** as the *noise floor* (LLM-persona
-labels are a proxy, reported as such); an **adversarial/evasion set** with the gap reported; a
-**policy-as-code CI eval** that fails the build on a safety regression.
+**Tier 2 — cheap rigor:** inter-annotator **kappa** as the *noise floor* is **built**
+(`eval/noise_floor.py`, `python -m eval.noise_floor`) — three LLM-persona reviewers label the
+set and report Fleiss' κ (≈0.53 today, *moderate* agreement); LLM-persona labels are a **proxy**
+for human annotators, reported as such. *Planned:* an **adversarial/evasion set** with the gap
+reported; a **policy-as-code CI eval** that fails the build on a safety regression.
 
 **Tier 3 — frontier (articulated, not faked):** **conformal prediction** (distribution-free
 abstain-or-act guarantee), **trajectory-level** guarding (the sequence is lethal even when each

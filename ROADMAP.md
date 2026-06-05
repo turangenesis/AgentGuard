@@ -139,6 +139,7 @@ One guardian policy plane; many workers.
 - **Policy-as-data per repo/team**; **a self-improving policy plane** — the guardian closes the loop on its own history rather than staying a static ruleset: it adapts thresholds from the human approve/reject record (which actions a reviewer always waves through vs. always blocks), and a Claude pass reads the audit log + adversarial misses to *propose* new rules and hardening, re-evaluated before they ship. The gate learns from every human decision and every attack it let slip.
 
 **Why it matters:** one policy plane governing many agents is the step from a tool to a platform — and a gate that *improves itself* from its own audit trail is the step from a fixed filter to a control system.
+**Prior art:** the meta-agent → target-agent → feedback-agent loop in [SIA](https://github.com/hexo-ai/sia) (a self-improving agent framework) is structurally the same loop. The cross-ecosystem mapping: SIA improves an agent to be better at a *task*; AgentGuard applies the same loop to make the *guard* better at *judging risk* — with the calibration eval's misses and false-alarms as the feedback signal. Same loop, different objective (safety policy, not task performance).
 
 ---
 
