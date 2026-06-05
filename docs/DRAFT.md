@@ -112,7 +112,11 @@ to exhaust reviewers and bury malicious activity is well established in security
 alert-flooding and analyst fatigue [15]) and is explicitly named as an exploitation vector for AI
 agents (approval fatigue as an "agent trap"). **The flooding attack is therefore prior art too**; we
 reproduce it in the agent-oversight setting and show the load-aware operating point defends against
-it (§5.5). Regulatory framing of human oversight is given by EU guidance [12].
+it (§5.5). Concurrent work reframes LLM-agent security itself as an *agent–human interaction*
+problem — surveying 59 papers and 21 production systems and naming **approval fatigue** and the
+"cognitive burden vs. security" tradeoff as first-class, under-studied concerns [16] — which is
+exactly the gap this paper measures rather than only names. Regulatory framing of human oversight is
+given by EU guidance [12].
 
 ---
 
@@ -193,7 +197,9 @@ phenomenon; it is not a human study.** (`eval/inverted_u.py`.)
 On the 125-action set the guard's safety/utility tradeoff is a real curve, not a binary. Under the
 asymmetric cost (Table 1), the **cost-minimizing policy collapses to "escalate almost everything"**:
 reaching 0% missed-danger requires a ~100% false-alarm rate, and the area under the risk–coverage
-curve (AURC; lower is better) is **0.37**. The reading is not "the guard is bad"; it is that *on
+curve (AURC; lower is better) is **0.376** for the run shown — and **0.374 ± 0.002** across three
+temperature-0 seeds (§5.4), the figure we quote as canonical throughout. The reading is not "the
+guard is bad"; it is that *on
 adversarial/ambiguous inputs this guard cannot safely auto-decide*, so it is forced to lean on the
 human. That dependence is precisely what makes the reviewer's properties decisive.
 
@@ -236,7 +242,8 @@ result; a human study fitting `r(ℓ)` (future work) would make it empirical.
 ![Two-model comparison](../eval/model_comparison.png)
 > **Figure 3.** Calibration curves for two scoring models (Haiku vs. Sonnet) on the 125-action set.
 
-Re-scoring with a stronger model shifts the curve: **Sonnet AURC 0.351 vs Haiku 0.373**, and Sonnet
+Re-scoring with a stronger model shifts the curve: **Sonnet AURC 0.351 vs Haiku 0.373** (each a
+single seed; the Haiku value sits inside the 0.374 ± 0.002 band below), and Sonnet
 can safely auto-allow a sliver (cost-min `θ`=10) where Haiku must escalate everything (`θ`=0). The
 gain is *modest* — a better model helps but does not solve the hard set. The point is methodological:
 guard quality depends on the scoring model (and threshold, and attack mix), so the right output is
@@ -400,3 +407,5 @@ Figueiredo, M. A. T., and Bizarro, P. *Cost-Sensitive Learning to Defer to Multi
 Workload Constraints.* TMLR 2024. arXiv:2403.06906.
 [15] Tariq, S., et al. *Alert Fatigue in Security Operations Centres: Research Challenges and
 Opportunities.* ACM Computing Surveys 57, 2025. doi:10.1145/3723158.
+[16] Wang, P., Li, Y., and Tian, Y. *Reframing LLM Agent Security as an Agent–Human Interaction
+Problem.* arXiv:2605.24309, 2026.
