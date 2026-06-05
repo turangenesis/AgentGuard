@@ -57,7 +57,7 @@ The deepest version of the thesis (full detail → **[docs/RESEARCH.md](docs/RES
 
 That's *selective classification under asymmetric cost with noisy labels **and an endogenous expert*** — the last clause is the novel seam, buildable now as a simulated inverted-U experiment.
 
-**Scope, stated honestly:** this matters **only where the judgment is subjective with delayed outcomes** (agent oversight, content moderation, alert triage) — **not** where there's objective ground truth (e.g. banking fraud, where you just use the better predictor). And it's **positioned against prior art**: trajectory-level guarding (ShieldAgent, Trajectory Guard) and learning-to-defer/complementarity are *cited, not claimed* — we claim only the endogenous-expert coupling, and flag it to verify before publishing.
+**Scope, stated honestly:** this matters **only where the judgment is subjective with delayed outcomes** (agent oversight, content moderation, alert triage) — **not** where there's objective ground truth (e.g. banking fraud, where you just use the better predictor). And it's **honestly positioned**: a novelty check confirmed the core mechanisms are *prior art* — the endogenous-fatiguing-reviewer + load-aware deferral is **FALCON / DeCCaF**, the flooding attack is SOC alert-fatigue, trajectory guarding is ShieldAgent et al. **This is an applied / measurement / systems project, not a novel-theory paper** — the contribution is the open-source firewall + the measurement that brings these ideas together for LLM agents.
 
 > The **working paper draft** is **[docs/DRAFT.md](docs/DRAFT.md)** (built from the figures + real numbers); the **skeleton + intellectual journey** is **[docs/PAPER.md](docs/PAPER.md)**.
 

@@ -36,26 +36,31 @@ endogenous expert.*** The last clause is the new part.
 
 ---
 
-## What is NOT novel (claim only the seam)
+## What is NOT novel (verified — it's all prior art)
 
-We were burned twice assuming obvious-sounding frontiers were virgin territory. They weren't.
-State prior art plainly and claim only the narrow seam:
+We checked, three times. Every candidate "seam" is published. State this plainly and present the
+work as **applied / measurement / systems**, never as a discovery:
 
-- **Trajectory / sequence-level guarding — PRIOR ART. We *implement* it; we do not claim it.**
-  [Trajectory Guard](https://arxiv.org/pdf/2601.00516), [ShieldAgent](https://arxiv.org/pdf/2503.22738),
-  [ToolSafe](https://arxiv.org/html/2601.10156v1), AgentAuditor, [AgentHarm](https://www.emergentmind.com/topics/agentharm).
-- **Human-AI complementarity / learning-to-defer / learning-to-complement / selective
-  oversight — PRIOR ART, cited.** [Complement-Humans](https://arxiv.org/pdf/2207.09584),
-  [To Ask or Not to Ask](https://arxiv.org/html/2510.08314),
-  [Complementarity survey](https://arxiv.org/html/2404.00029v1),
-  [Appropriate Reliance](https://arxiv.org/abs/2310.02108),
+- **Endogenous / fatiguing reviewer + load-aware deferral + the inverted-U — PRIOR ART.**
+  [FALCON — Fatigue-Aware Learning to Defer](https://arxiv.org/html/2604.00904) ("existing L2D
+  methods assume static human performance… FALCON models workload-varying performance with
+  psychologically-grounded fatigue curves") and
+  [DeCCaF — cost-sensitive deferral under workload constraints](https://arxiv.org/abs/2403.06906).
+  *This is the exact idea we thought might be ours. It isn't.*
+- **Fatigue-as-attack (flood the reviewer to bury a malicious action) — PRIOR ART.** SOC
+  alert-flooding / analyst-fatigue (ACM Computing Surveys 2025) and approval fatigue named as an
+  AI-agent exploitation vector ("agent traps").
+- **Trajectory / sequence-level guarding — PRIOR ART. We *implement* it.**
+  [Trajectory Guard](https://arxiv.org/pdf/2601.00516), [ShieldAgent](https://arxiv.org/pdf/2503.22738).
+- **Learning-to-defer / complementarity / selective oversight — PRIOR ART, cited.**
+  [Complement-Humans](https://arxiv.org/pdf/2207.09584), [To Ask or Not to Ask](https://arxiv.org/html/2510.08314),
   [EU human-oversight guidance](https://www.edps.europa.eu/data-protection/our-work/publications/techdispatch/2025-09-23-techdispatch-22025-human-oversight-automated-making_en).
-  These learn *who is better* and *when to ask* — but assume a **static** expert.
-- **The seam we claim (verify before publishing):** the expert is **endogenous** — reliability
-  degrades with cumulative escalation load — so the optimal deferral policy is **load-aware**,
-  and uncertainty-optimal deferral is fatigue-suboptimal. *Before claiming novelty, search:*
-  "endogenous expert reliability", "fatigue learning to defer", "load-aware deferral",
-  "attention budget human oversight", and [Science of AI Agent Reliability](https://arxiv.org/html/2602.16666v1).
+
+**Our actual contribution = artifacts + measurement, not theory:** an open-source agent firewall
+(+ live demo) that operationalizes these ideas together in the LLM-agent setting, a calibration +
+noise-floor measurement apparatus, and honest demonstrations (inverted-U, flooding attack,
+model-dependence, reproducibility) on real scored data. Strong portfolio + workshop/technical-report
+grade — **not** a novel-theory conference paper.
 
 ---
 

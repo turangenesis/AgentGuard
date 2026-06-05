@@ -22,10 +22,13 @@ the guard cannot safely auto-decide; and (iii) when the reviewer is modeled as *
 fatiguing as escalation load grows — realized safety becomes an **inverted-U** in the escalation
 rate: *more human oversight can make a system less safe*, and the safety-optimal guard escalates
 **below** the reviewer's capacity — a setting a load-aware policy also uses to resist a *flooding
-attack* that rubber-stamps a malicious action past a fatigued reviewer. Our contribution is the
-*measurement framework* and the endogenous-reviewer result; trajectory-level guarding and
-learning-to-defer are prior art we cite, not claim. The inverted-U is a modeling result that motivates a human study; the framework is what
-turns "is my guard good?" from a guess into a number.
+attack* that rubber-stamps a malicious action past a fatigued reviewer. **We claim none of these
+mechanisms as novel:** fatigue-aware learning-to-defer (FALCON [13], DeCCaF [14]), trajectory-level
+guarding, and fatigue/flooding attacks on human reviewers (security-operations alert fatigue [15])
+are all prior art we cite. Our contribution is an **open-source agent-oversight system** that
+operationalizes and *measures* these ideas together in the LLM-agent action-gating setting —
+turning "is my guard good?" from a guess into a curve. The inverted-U and the flooding attack are
+modeling results that motivate a human study.
 
 ---
 
@@ -54,19 +57,23 @@ human reviewers *fatigue*: every escalation spends attention and nudges them tow
 (a well-documented "approval fatigue" failure mode). Crucially, the reviewer is **endogenous** —
 the guard's own escalation policy degrades the very oracle it escalates to.
 
-**Contributions.**
-- A **measurement framework** that treats an agent guard as *selective classification under
-  asymmetric cost* and reports an operating-point curve, a Neyman–Pearson point, and an AURC,
-  rather than an accuracy number (§4, §5.1).
-- A **measured noise floor**: on 125 hand-labeled actions, reviewer agreement is only moderate
-  (Fleiss' κ = 0.52), establishing that there is no single ground-truth safety label (§5.2).
-- The **endogenous-reviewer result**: modeling reviewer reliability as decreasing in escalation
-  load yields an **inverted-U** — realized safety is maximized at an escalation rate *below*
-  capacity, and escalating everything is strictly worse (§5.3).
-- **Fatigue as an attack surface**: flooding the gate with routine actions induces rubber-stamping;
-  a load-aware policy resists what a paranoid one cannot (§5.5).
-- A demonstration that results are **model-dependent** and reproducible (AURC 0.374 ± 0.002 over
-  seeds), and that the framework *measures* both (Haiku vs Sonnet; N-seed, §5.4).
+**What this paper is — and is not.** It is **not** a novel-mechanism paper. Fatigue-aware deferral
+[13,14], trajectory-level guarding, selective classification, and fatigue/flooding attacks on
+human reviewers [15] are all established. It is an **applied, measurement-driven systems** study:
+we bring these strands together into one open-source agent-oversight firewall and *measure* what is
+usually asserted. Our contributions are therefore artifacts and measurements, not theory:
+
+- An **open-source agent firewall + measurement apparatus** that treats the guard as *selective
+  classification under asymmetric cost* and reports an operating-point curve, Neyman–Pearson point,
+  and AURC instead of accuracy (§4, §5.1), with a live, interactive demo.
+- A **measured noise floor** for agent-action risk: on 125 hand-labeled actions, reviewer agreement
+  is only moderate (Fleiss' κ = 0.52) — there is no single ground-truth safety label (§5.2).
+- A **demonstration, in the LLM-agent setting, of the endogenous-reviewer inverted-U** [13]:
+  realized safety is maximized at an escalation rate *below* capacity, and escalating everything is
+  strictly worse (§5.3) — and that the *same* load-aware setting resists a **flooding attack** [15]
+  (§5.5). These are *modeling* results on real scored data, not human studies.
+- Evidence that results are **model-dependent and reproducible** (Haiku vs Sonnet; AURC
+  0.374 ± 0.002 over seeds), and that the framework *measures* both (§5.4).
 
 **Scope (stated up front).** This matters where the judgment is genuinely *subjective with delayed
 outcomes* — autonomous agent action-gating, content-moderation borderline calls, security-alert
@@ -86,22 +93,26 @@ evaluators (AgentAuditor). **We implement per-action gating and treat trajectory
 prior art**; our contribution is orthogonal — the *oversight-calibration* layer, which consumes
 whatever detection signal exists.
 
-**Learning to defer and human–AI complementarity.** A mature line studies *when* to defer to a
-human and how to *complement* human weaknesses: learning to defer [5], learning predictors that
-complement humans [6], learning when to require feedback [7], complementary team performance [8],
-and appropriate reliance [9]. These assume a **static** expert — available and constant-quality.
-Our departure is the **endogenous** expert whose reliability degrades with cumulative load.
+**Learning to defer, complementarity, and the fatiguing expert.** A mature line studies *when* to
+defer to a human and how to *complement* human weaknesses: learning to defer [5], complement-humans
+[6], learning when to require feedback [7], complementary team performance [8], appropriate reliance
+[9]. Most assume a **static** expert — but two recent works already drop that assumption and model a
+**fatiguing/workload-varying** one: **FALCON** [13] (fatigue-aware learning-to-defer with
+psychologically-grounded fatigue curves) and **DeCCaF** [14] (cost-sensitive deferral under workload
+constraints). **The endogenous-reviewer idea is therefore theirs, not ours**; we *apply* it to the
+LLM-agent action-gating setting and measure it.
 
 **Selective classification and calibration.** Risk–coverage curves and AURC come from selective
 classification [10]; distribution-free guarantees from conformal prediction [11]; calibration is
 classically measured with ECE/Brier/reliability diagrams. We use the selective-classification lens;
 we do *not* yet claim formal calibration (ECE) — that is future rigor.
 
-**Human oversight and approval fatigue.** That reviewers rubber-stamp under load is widely
-documented in practitioner and regulatory writing (approval/confirmation fatigue; EU human-
-oversight guidance [12]). To our knowledge this is *named* qualitatively but not *formalized inside
-the guard's objective*. That formalization — and the inverted-U it produces — is the seam we claim
-(and flag for verification before publication).
+**Reviewer fatigue as an attack surface.** That an adversary can *weaponise* alert/approval volume
+to exhaust reviewers and bury malicious activity is well established in security operations (SOC
+alert-flooding and analyst fatigue [15]) and is explicitly named as an exploitation vector for AI
+agents (approval fatigue as an "agent trap"). **The flooding attack is therefore prior art too**; we
+reproduce it in the agent-oversight setting and show the load-aware operating point defends against
+it (§5.5). Regulatory framing of human oversight is given by EU guidance [12].
 
 ---
 
@@ -249,8 +260,9 @@ optimum (§5.3) and denies the attacker the load they need. (Simulation, same fa
 - **Sampling sensitivity is small but nonzero** (AURC 0.374 ± 0.002 over 3 seeds at temp 0.7);
   residual backend nondeterminism at temperature 0 is unquantified.
 - **Operating-point analysis, not formal calibration** (no ECE/reliability yet).
-- The endogenous-reviewer framing's **novelty is unverified** against the deferral literature —
-  flagged for a citation pass before any publication claim.
+- **The core mechanisms are prior art** (verified): fatigue-aware deferral [13,14] and
+  reviewer-fatigue attacks [15] are established. This is an *applied/measurement/systems* study, not
+  a theoretical contribution — positioned as such, not as a discovery.
 
 ---
 
@@ -282,9 +294,11 @@ Stopping an agent is a framework feature. Knowing *when* to stop it — and acco
 that asking depletes the human you are asking — is the problem. Treating the guard as selective
 classification under asymmetric cost makes its judgment measurable; measuring reviewer agreement
 shows there is no single ground truth; and modeling the reviewer as endogenous shows that oversight
-has a capacity, beyond which more of it makes a system less safe. The numbers here are small and
-some are simulated, and we say so. The framework is the contribution: it turns "is my guard any
-good?" from a vibe into a curve.
+has a capacity, beyond which more of it makes a system less safe. None of these mechanisms is ours
+to claim — fatigue-aware deferral and reviewer-fatigue attacks are prior art — and we say so. What
+we contribute is the **system and the measurement**: an open-source agent firewall that brings these
+strands together and turns "is my guard any good?" from a vibe into a curve. The numbers are small
+and some are simulated, and we say that too.
 
 ---
 
@@ -308,3 +322,9 @@ Reliance on AI Advice.* arXiv:2310.02108.
 Uncertainty Quantification.*
 [12] European Data Protection Supervisor. *TechDispatch #2/2025: Human Oversight of Automated
 Decision-Making.*
+[13] *FALCON: Fatigue-Aware Learning to Defer via Constrained Optimisation.* arXiv:2604.00904.
+[14] *DeCCaF: Cost-Sensitive Learning to Defer to Multiple Experts with Workload Constraints.*
+arXiv:2403.06906.
+[15] *Alert Fatigue in Security Operations Centres: Research Challenges and Opportunities.* ACM
+Computing Surveys (2025); and practitioner work on approval fatigue as an AI-agent exploitation
+vector.
