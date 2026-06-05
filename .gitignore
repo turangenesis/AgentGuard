@@ -51,3 +51,5 @@ out/
 # Generated eval artifacts (calibration.png + calibration.json are committed so the
 # README curve renders and the dashboard calibration dial works out-of-the-box)
 eval/noise_floor.json
+eval/inverted_u.json
+eval/model_comparison.json
