@@ -76,6 +76,23 @@ uvicorn agentguard.api:app              # dashboard → http://localhost:8000 (R
 
 The dashboard shows a live activity feed, pending approvals with the guardian's reasoning, approve/reject, and a per-run cost line. The **Run demo** button drives a full SAFE → BLOCKED → APPROVAL flow with **no API key**. A **Calibration explorer** lets you *drag* the guard's aggressiveness and watch the missed-danger vs false-alarm tradeoff recolor across all 125 actions in real time — the curve made tangible, replaying saved scores (no API calls). Run `python -m eval.calibrate` once to populate it.
 
+## Plug it into your own agent (MCP)
+
+AgentGuard is also an **MCP server**, so *your own* agent — Claude Code, Cursor, or a custom one — can route its actions through the guard. The agent doesn't open this app; it calls two tools (`submit_action_for_review`, `check_review`) before it acts. Add ~4 lines to your MCP client config:
+
+```jsonc
+{ "mcpServers": { "agentguard": { "command": "python", "args": ["-m", "agentguard.mcp_server"] } } }
+```
+
+Now when *your* agent wants to `git push` or `rm -rf`, it asks AgentGuard first — which returns **allow** / **blocked**, or **pending** (queued for a human to approve on the dashboard). See it without a real client:
+
+```bash
+python scripts/mcp_demo.py               # an external agent submits 3 actions over MCP → verdicts
+python -m agentguard.mcp_server          # run the MCP server itself (stdio)
+```
+
+> *Cooperative integration (the agent is configured to ask). True no-bypass — gateway / host-hook / sandbox — is the [enforcement ladder](ROADMAP.md) above this.*
+
 ## Development
 
 ```bash

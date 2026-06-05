@@ -37,6 +37,7 @@ from . import db
 from .cost import estimate_run_cost
 from .demo import DEMO_TASK, demo_worker
 from .graph import RECURSION_LIMIT, build_graph, initial_state, make_worker_model
+from .mcp_server import MCP_THREAD_PREFIX
 from .policy.guardian import Judge, cost_stats, default_judge
 
 # --- configuration (env-overridable) --------------------------------------- #
@@ -230,8 +231,25 @@ def _resolve_decision(
         raise HTTPException(status_code=404, detail=f"no such pending action: {action_id}")
     if row["status"] != "PENDING":
         raise HTTPException(status_code=409, detail=f"action already {row['status']}")
-    payload = {"approved": approved, "status": status}
-    background.add_task(_resume_run, row["thread_id"], payload)
+
+    if str(row["thread_id"]).startswith(MCP_THREAD_PREFIX):
+        # Externally-submitted (MCP) action — there is no LangGraph run to resume. Resolve the
+        # pending row directly; the external agent learns the outcome via check_review.
+        db.resolve_pending(AUDIT_DB, action_id, status)
+        db.append_audit(
+            AUDIT_DB,
+            event=status,
+            thread_id=row["thread_id"],
+            action_id=action_id,
+            kind=row["kind"],
+            target=row["target"],
+            verdict="APPROVAL_REQUIRED",
+            reason=row["reason"],
+            detail=f"{status} via dashboard (MCP action)",
+        )
+    else:
+        payload = {"approved": approved, "status": status}
+        background.add_task(_resume_run, row["thread_id"], payload)
     return {"action_id": action_id, "status": status, "thread_id": row["thread_id"]}
 
 
