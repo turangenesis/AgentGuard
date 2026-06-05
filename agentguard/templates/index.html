@@ -92,6 +92,48 @@
       <p id="feed-empty" class="text-sm text-slate-600 italic">Nothing yet — run the demo or a task.</p>
     </section>
 
+    <!-- calibration explorer (research) -->
+    <section class="mt-12 pt-8 border-t border-slate-800">
+      <div class="flex items-center gap-2 mb-1">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Calibration explorer</h2>
+        <span class="text-xs rounded-full bg-violet-500/15 text-violet-300 px-2 py-0.5">research</span>
+      </div>
+      <p class="text-xs text-slate-500 mb-4">
+        Safety isn't a switch — it's a <span class="text-slate-300">dial</span>. Drag the guard's
+        aggressiveness and watch what each setting <em>costs</em>. Scores are pre-computed on the
+        hard test set — <span class="text-slate-300">no API calls, nothing spent</span>.
+      </p>
+
+      <p id="calib-missing" class="text-sm text-slate-600 italic" style="display:none">
+        No calibration data yet — run <code class="text-slate-300">python -m eval.calibrate</code> first.
+      </p>
+
+      <div id="calib-body" style="display:none">
+        <!-- slider -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4 mb-4">
+          <div class="flex items-center justify-between mb-2 text-sm">
+            <span class="text-slate-300">aggressiveness θ — <span class="text-slate-500">auto-allow if risk &lt; θ</span></span>
+            <span class="font-mono text-violet-300">θ = <span id="calib-theta-val">30</span></span>
+          </div>
+          <input id="calib-theta" type="range" min="0" max="100" value="30"
+            class="w-full accent-violet-400 cursor-pointer" />
+          <div class="flex justify-between text-xs text-slate-600 mt-1">
+            <span>paranoid (escalate everything)</span><span>permissive (auto-allow everything)</span>
+          </div>
+        </div>
+
+        <!-- live metrics -->
+        <div id="calib-metrics" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"></div>
+
+        <!-- action grid -->
+        <p class="text-xs text-slate-500 mb-2">
+          125 actions by risk score (highest first). <span class="text-rose-300">red = dangerous, auto-allowed (a miss)</span> ·
+          <span class="text-amber-300">amber = safe, escalated (false alarm)</span>.
+        </p>
+        <div id="calib-actions" class="grid sm:grid-cols-2 gap-1.5 max-h-80 overflow-y-auto pr-1"></div>
+      </div>
+    </section>
+
     <footer class="mt-10 text-center text-xs text-slate-700">
       AgentGuard · polling every second · <a href="/api" class="hover:text-slate-500 underline">/api</a>
     </footer>
@@ -261,8 +303,73 @@
       }
     }
 
+    // ---- calibration explorer (loaded once; re-thresholds client-side, no API) ----
+    let CALIB_ACTIONS = null;
+    const isDanger = (g) => g === "APPROVAL_REQUIRED" || g === "BLOCKED";
+    const pct = (x) => `${Math.round((x || 0) * 100)}%`;
+
+    function metricCard(label, value, sub, cls) {
+      return `<div class="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
+        <div class="text-xl font-mono ${cls}">${value}</div>
+        <div class="text-xs text-slate-400">${label}</div>
+        <div class="text-[11px] text-slate-600">${sub}</div></div>`;
+    }
+
+    function renderCalib() {
+      const theta = +document.getElementById("calib-theta").value;
+      document.getElementById("calib-theta-val").textContent = theta;
+      const acts = CALIB_ACTIONS || [];
+      let misses = 0, falseAlarms = 0, allowed = 0, dangerous = 0, safe = 0;
+      for (const a of acts) {
+        const allow = a.score < theta;
+        if (allow) allowed++;
+        if (isDanger(a.gold)) { dangerous++; if (allow) misses++; }
+        else { safe++; if (!allow) falseAlarms++; }
+      }
+      const n = acts.length || 1;
+      document.getElementById("calib-metrics").innerHTML =
+        metricCard("auto-handled", pct(allowed / n), `${allowed} of ${acts.length} actions`, "text-emerald-300") +
+        metricCard("escalated to human", pct(1 - allowed / n), `${acts.length - allowed} actions`, "text-sky-300") +
+        metricCard("missed danger", pct(misses / (dangerous || 1)), `${misses} dangerous auto-allowed`, misses ? "text-rose-400" : "text-slate-300") +
+        metricCard("false alarms", pct(falseAlarms / (safe || 1)), `${falseAlarms} safe escalated`, "text-amber-300");
+
+      const sorted = acts.slice().sort((a, b) => b.score - a.score);
+      document.getElementById("calib-actions").innerHTML = sorted.map((a) => {
+        const allow = a.score < theta, danger = isDanger(a.gold);
+        const miss = danger && allow, fa = !danger && !allow;
+        const cls = miss ? "border-rose-500/70 bg-rose-500/10"
+          : fa ? "border-amber-500/40 bg-amber-500/[0.05]"
+          : allow ? "border-slate-800 bg-emerald-500/[0.04]" : "border-slate-700 bg-slate-900/40";
+        const tag = miss ? '<span class="text-rose-300">⚠ miss</span>'
+          : fa ? '<span class="text-amber-300">false alarm</span>'
+          : allow ? '<span class="text-emerald-400">auto</span>' : '<span class="text-sky-300">→ human</span>';
+        return `<div class="flex items-center gap-2 rounded border ${cls} px-2 py-1 text-xs">
+          <span class="font-mono w-7 text-right text-slate-300">${a.score}</span>
+          <span class="text-slate-500 w-12 shrink-0">${esc(a.kind)}</span>
+          <span class="text-slate-300 truncate flex-1">${esc(a.target)}</span>
+          <span class="shrink-0">${tag}</span></div>`;
+      }).join("");
+    }
+
+    async function loadCalibration() {
+      try {
+        const c = await api("/calibration");
+        if (!c.available || !(c.actions || []).length) {
+          document.getElementById("calib-missing").style.display = "";
+          return;
+        }
+        CALIB_ACTIONS = c.actions;
+        document.getElementById("calib-body").style.display = "";
+        document.getElementById("calib-theta").addEventListener("input", renderCalib);
+        renderCalib();
+      } catch (e) {
+        document.getElementById("calib-missing").style.display = "";
+      }
+    }
+
     refresh();
     setInterval(refresh, 1000);
+    loadCalibration();
   </script>
 </body>
 </html>

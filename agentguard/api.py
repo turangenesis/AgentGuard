@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import os
 import sqlite3
 import uuid
@@ -45,6 +46,7 @@ TTL_MS = int(os.getenv("APPROVAL_TTL_MS", "120000"))
 SWEEP_INTERVAL_S = float(os.getenv("AGENTGUARD_SWEEP_INTERVAL_S", "5"))
 
 _DASHBOARD = Path(__file__).resolve().parent / "templates" / "index.html"
+_CALIBRATION = Path(__file__).resolve().parent.parent / "eval" / "calibration.json"
 
 # --- injectable factories (tests override these to use a fake worker, no key) - #
 worker_factory: Callable[[], Any] = make_worker_model
@@ -187,6 +189,21 @@ def get_pending() -> dict:
 @app.get("/feed")
 def get_feed(limit: int = 100) -> dict:
     return {"feed": db.recent_audit(AUDIT_DB, limit=limit)}
+
+
+@app.get("/calibration")
+def get_calibration() -> dict:
+    """Serve the saved per-action risk scores for the dashboard's calibration dial.
+
+    Pure replay of a prior `python -m eval.calibrate` run — no API calls, no cost. The dial
+    re-thresholds these client-side. Returns {available: False} if the eval hasn't been run.
+    """
+    if not _CALIBRATION.exists():
+        return {"available": False}
+    try:
+        return {"available": True, **json.loads(_CALIBRATION.read_text(encoding="utf-8"))}
+    except (json.JSONDecodeError, OSError):
+        return {"available": False}
 
 
 @app.get("/runs")

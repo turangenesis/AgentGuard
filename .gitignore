@@ -48,6 +48,6 @@ out/
 *.sqlite
 *.sqlite3
 
-# Generated eval artifacts (calibration.png is committed for the README)
-eval/calibration.json
+# Generated eval artifacts (calibration.png + calibration.json are committed so the
+# README curve renders and the dashboard calibration dial works out-of-the-box)
 eval/noise_floor.json

@@ -43,7 +43,9 @@ def test_summarize_picks_operating_points():
 
 def test_score_dataset_is_key_free_and_bounded():
     records = load_dataset()
-    scored, meta = calibrate.score_dataset(records, scorer=None)  # no LLM scorer
-    assert len(scored) == len(records)
+    actions, meta = calibrate.score_dataset(records, scorer=None)  # no LLM scorer
+    assert len(actions) == len(records)
     assert meta["n_rule"] > 0  # the rule layer scores the clear cases with no key
-    assert all(0 <= s <= 100 for _, s in scored)
+    assert all(0 <= a["score"] <= 100 for a in actions)
+    assert all(a["gold"] in ("SAFE", "APPROVAL_REQUIRED", "BLOCKED") for a in actions)
+    assert all({"target", "kind", "gold", "score", "source"} <= set(a) for a in actions)

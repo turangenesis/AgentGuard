@@ -88,27 +88,39 @@ def summarize(points: list[dict]) -> dict:
     return {"cost_min": cost_min, "np_point": np_point, "aurc": round(aurc, 4)}
 
 
-def score_dataset(records: list[dict], scorer: Scorer | None) -> tuple[list[tuple[str, int]], dict]:
-    """Score every record 0-100: rule layer first, then the (optional) LLM scorer, else 50."""
-    scored: list[tuple[str, int]] = []
+def score_dataset(records: list[dict], scorer: Scorer | None) -> tuple[list[dict], dict]:
+    """Score every record 0-100: rule layer first, then the (optional) LLM scorer, else 50.
+
+    Returns per-action dicts (target/kind/gold/score/source) so both the curve and the
+    dashboard's calibration explorer can reuse the saved scores with no further API calls.
+    """
+    actions: list[dict] = []
     n_rule = n_llm = n_default = 0
     for rec in records:
         gold = Verdict(rec["label"]).value
         action = _action(rec)
         s = rule_risk_score(action)
         if s is not None:
-            n_rule += 1
+            src, n_rule = "rule", n_rule + 1
         elif scorer is not None and (s := scorer(action)) is not None:
-            n_llm += 1
+            src, n_llm = "llm", n_llm + 1
         else:
-            s, _ = 50, (n_default := n_default + 1)
-        scored.append((gold, s))
+            s, src, n_default = 50, "default", n_default + 1
+        actions.append(
+            {
+                "target": action.target,
+                "kind": action.kind.value,
+                "gold": gold,
+                "score": s,
+                "source": src,
+            }
+        )
     label = (
         "LLM (fine-grained)"
         if scorer is not None
         else "deterministic rule-derived (coarse, key-free)"
     )
-    return scored, {"scorer": label, "n_rule": n_rule, "n_llm": n_llm, "n_default": n_default}
+    return actions, {"scorer": label, "n_rule": n_rule, "n_llm": n_llm, "n_default": n_default}
 
 
 def _print_report(points: list[dict], summ: dict, meta: dict, n: int) -> None:
@@ -214,12 +226,17 @@ def main() -> None:
 
     records = load_dataset()
     scorer = default_scorer()
-    scored, meta = score_dataset(records, scorer)
+    actions, meta = score_dataset(records, scorer)
+    scored = [(a["gold"], a["score"]) for a in actions]
     points = evaluate(scored)
     summ = summarize(points)
     _print_report(points, summ, meta, n=len(scored))
-    OUT.write_text(json.dumps({"meta": meta, "n": len(scored), "points": points, **summ}, indent=2))
-    print(f"  wrote {OUT.name} (curve data for plotting)")
+    OUT.write_text(
+        json.dumps(
+            {"meta": meta, "n": len(scored), "actions": actions, "points": points, **summ}, indent=2
+        )
+    )
+    print(f"  wrote {OUT.name} (curve + per-action scores for the dashboard dial)")
     if args.plot:
         plot_curve(points, summ, PNG)
 
