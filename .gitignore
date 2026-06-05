@@ -54,3 +54,8 @@ out/
 eval/inverted_u.json
 eval/fatigue_attack.json
 eval/nseed.json
+
+# Internal working notes — kept local, not for the public repo. Preserved on the
+# archive/internal-notes-* branch and in history; ignored here so they aren't re-added.
+docs/PAPER.md
+docs/DECISIONS.md
