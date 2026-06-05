@@ -53,3 +53,6 @@ out/
 eval/noise_floor.json
 eval/inverted_u.json
 eval/model_comparison.json
+
+eval/fatigue_attack.json
+eval/nseed.json

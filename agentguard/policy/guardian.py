@@ -218,12 +218,16 @@ Respond with ONLY a JSON object, no prose, no code fence:
 """
 
 
-def make_llm_scorer(model: str = _DEFAULT_MODEL) -> Scorer:
-    """Build a Claude-backed 0-100 risk scorer. Requires ANTHROPIC_API_KEY at call time."""
+def make_llm_scorer(model: str = _DEFAULT_MODEL, temperature: float = 0.0) -> Scorer:
+    """Build a Claude-backed 0-100 risk scorer. Requires ANTHROPIC_API_KEY at call time.
+
+    ``temperature`` defaults to 0 (deployed/near-deterministic); raise it for an N-seed
+    sampling-sensitivity analysis (see ``eval/nseed.py``).
+    """
     from langchain_anthropic import ChatAnthropic
     from langchain_core.messages import HumanMessage, SystemMessage
 
-    llm = ChatAnthropic(model=model, temperature=0, max_tokens=60)
+    llm = ChatAnthropic(model=model, temperature=temperature, max_tokens=60)
     system = SystemMessage(
         content=[{"type": "text", "text": _SCORER_SYSTEM, "cache_control": {"type": "ephemeral"}}]
     )
