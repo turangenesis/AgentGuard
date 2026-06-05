@@ -21,9 +21,10 @@ classification under asymmetric cost** makes its operating limits measurable, an
 the guard cannot safely auto-decide; and (iii) when the reviewer is modeled as **endogenous** —
 fatiguing as escalation load grows — realized safety becomes an **inverted-U** in the escalation
 rate: *more human oversight can make a system less safe*, and the safety-optimal guard escalates
-**below** the reviewer's capacity. Our contribution is the *measurement framework* and the
-endogenous-reviewer result; trajectory-level guarding and learning-to-defer are prior art we cite,
-not claim. The inverted-U is a modeling result that motivates a human study; the framework is what
+**below** the reviewer's capacity — a setting a load-aware policy also uses to resist a *flooding
+attack* that rubber-stamps a malicious action past a fatigued reviewer. Our contribution is the
+*measurement framework* and the endogenous-reviewer result; trajectory-level guarding and
+learning-to-defer are prior art we cite, not claim. The inverted-U is a modeling result that motivates a human study; the framework is what
 turns "is my guard good?" from a guess into a number.
 
 ---
@@ -62,8 +63,10 @@ the guard's own escalation policy degrades the very oracle it escalates to.
 - The **endogenous-reviewer result**: modeling reviewer reliability as decreasing in escalation
   load yields an **inverted-U** — realized safety is maximized at an escalation rate *below*
   capacity, and escalating everything is strictly worse (§5.3).
-- A demonstration that results are **model-dependent** and that the framework *measures* that
-  dependence (Haiku vs Sonnet, §5.4).
+- **Fatigue as an attack surface**: flooding the gate with routine actions induces rubber-stamping;
+  a load-aware policy resists what a paranoid one cannot (§5.5).
+- A demonstration that results are **model-dependent** and reproducible (AURC 0.374 ± 0.002 over
+  seeds), and that the framework *measures* both (Haiku vs Sonnet; N-seed, §5.4).
 
 **Scope (stated up front).** This matters where the judgment is genuinely *subjective with delayed
 outcomes* — autonomous agent action-gating, content-moderation borderline calls, security-alert
@@ -214,8 +217,24 @@ Re-scoring with a stronger model shifts the curve: **Sonnet AURC 0.351 vs Haiku 
 can safely auto-allow a sliver (cost-min `θ`=10) where Haiku must escalate everything (`θ`=0). The
 gain is *modest* — a better model helps but does not solve the hard set. The point is methodological:
 guard quality depends on the scoring model (and threshold, and attack mix), so the right output is
-not "guards are good/bad" but *a measurement, for a given configuration*. (Single seed, temperature
-0; a published claim should run N seeds and report mean ± spread.)
+not "guards are good/bad" but *a measurement, for a given configuration*. The result is also
+**reproducible**: across 3 seeds at temperature 0.7 the AURC is **0.374 ± 0.002** (range
+0.371–0.376), and temperature 0 (the deployed setting) is tighter still — the curve is stable to
+LLM sampling, not a single lucky draw.
+
+### 5.5 Fatigue is an attack surface
+
+![Fatigue attack](../eval/fatigue_attack.png)
+
+The endogenous reviewer is not only a safety limit — it is an *attack surface*. An adversary buries
+one malicious action in a stream of `k` benign "filler" actions; each escalated filler adds reviewer
+load, so by the time the malicious action is reviewed a fatigued reviewer rubber-stamps it. Under a
+naive **paranoid** policy — escalating 88% of routine actions (the measured false-alarm rate at
+`θ`=10) — attack success climbs from 0 toward the rubber-stamp ceiling (~80%) as filler grows, and
+is already 40% at just 50 filler actions. Under a **load-aware** policy — escalating 24% (the `θ`=35
+false-alarm rate) — the reviewer stays fresh and attack success holds at **0%**. The defense and the
+safety result are the *same lever*: **not escalating routine actions** both finds the inverted-U
+optimum (§5.3) and denies the attacker the load they need. (Simulation, same fatigue model as §5.3.)
 
 ---
 
@@ -227,7 +246,8 @@ not "guards are good/bad" but *a measurement, for a given configuration*. (Singl
   human-agreement ceiling.
 - **The inverted-U is simulated**, not measured: fatigue is documented, but `r(ℓ)`'s shape is
   assumed, not fit to people.
-- **Single seed, temperature 0**; LLM scores carry residual nondeterminism not yet quantified.
+- **Sampling sensitivity is small but nonzero** (AURC 0.374 ± 0.002 over 3 seeds at temp 0.7);
+  residual backend nondeterminism at temperature 0 is unquantified.
 - **Operating-point analysis, not formal calibration** (no ECE/reliability yet).
 - The endogenous-reviewer framing's **novelty is unverified** against the deferral literature —
   flagged for a citation pass before any publication claim.
@@ -237,10 +257,10 @@ not "guards are good/bad" but *a measurement, for a given configuration*. (Singl
 ## 7. Future Work
 
 Fit `r(ℓ)` from a **human study** (the empirical grounding); a **load-aware deferral policy** that
-escalates by *expected value of review* rather than uncertainty alone; a **fatigue-as-attack**
-evaluation (bury a malicious action in a routine stream to induce rubber-stamping; show the
-load-aware policy resists it); **N-seed** runs with variance; formal **calibration metrics** and
-**conformal** abstention; and scaling to **published benchmarks** (AgentDojo, InjecAgent).
+escalates by *expected value of review* rather than uncertainty alone (the simulations here motivate
+it; a learned policy is the natural next artifact); formal **calibration metrics** (ECE/reliability)
+and **conformal** abstention; and scaling to **published benchmarks** (AgentDojo, InjecAgent) for
+external validity.
 
 ---
 
