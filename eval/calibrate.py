@@ -16,6 +16,7 @@ small hand-labeled set — we report the curve, never a single cherry-picked num
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -25,6 +26,7 @@ from agentguard.types import Verdict
 from .run_eval import _action, load_dataset
 
 OUT = Path(__file__).resolve().parent / "calibration.json"
+PNG = Path(__file__).resolve().parent / "calibration.png"
 
 # A dangerous action must NOT be auto-allowed; a safe one should auto-run.
 _DANGEROUS = {Verdict.APPROVAL_REQUIRED, Verdict.BLOCKED}
@@ -146,7 +148,70 @@ def _print_report(points: list[dict], summ: dict, meta: dict, n: int) -> None:
     print("  Coarse scorer runs key-free; the LLM scorer gives the fine-grained curve.\n")
 
 
+def plot_curve(points: list[dict], summ: dict, out_path: Path) -> None:
+    """Render the safety/utility tradeoff + expected-cost-vs-threshold to a PNG."""
+    import matplotlib
+
+    matplotlib.use("Agg")  # headless
+    import matplotlib.pyplot as plt
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
+    fa = [p["false_alarm_rate"] * 100 for p in points]
+    miss = [p["miss_rate"] * 100 for p in points]
+    cm, npt = summ["cost_min"], summ["np_point"]
+
+    ax1.plot(fa, miss, "-o", color="#10b981", ms=3, label="operating points")
+    ax1.scatter(
+        [cm["false_alarm_rate"] * 100],
+        [cm["miss_rate"] * 100],
+        color="#f59e0b",
+        s=90,
+        zorder=5,
+        label=f"cost-min (θ={cm['theta']})",
+    )
+    if npt:
+        ax1.scatter(
+            [npt["false_alarm_rate"] * 100],
+            [npt["miss_rate"] * 100],
+            color="#ef4444",
+            s=90,
+            marker="D",
+            zorder=5,
+            label=f"Neyman–Pearson (θ={npt['theta']})",
+        )
+    ax1.set_xlabel("false-alarm rate (%)")
+    ax1.set_ylabel("missed-danger rate (%)")
+    ax1.set_title("Safety / utility tradeoff")
+    ax1.legend(fontsize=8)
+    ax1.grid(alpha=0.2)
+
+    ax2.plot(
+        [p["theta"] for p in points],
+        [p["expected_cost"] for p in points],
+        "-o",
+        color="#6366f1",
+        ms=3,
+    )
+    ax2.axvline(cm["theta"], color="#f59e0b", ls="--", alpha=0.6, label=f"cost-min θ={cm['theta']}")
+    ax2.set_xlabel("aggressiveness θ  (auto-allow if risk < θ)")
+    ax2.set_ylabel("expected cost (asymmetric)")
+    ax2.set_title("Expected cost vs threshold")
+    ax2.legend(fontsize=8)
+    ax2.grid(alpha=0.2)
+
+    fig.suptitle(
+        "AgentGuard calibration — selective classification under asymmetric cost", fontsize=11
+    )
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=130)
+    print(f"  wrote {out_path.name} (calibration curve)\n")
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description="AgentGuard calibration eval")
+    parser.add_argument("--plot", action="store_true", help="also write calibration.png")
+    args = parser.parse_args()
+
     records = load_dataset()
     scorer = default_scorer()
     scored, meta = score_dataset(records, scorer)
@@ -154,7 +219,9 @@ def main() -> None:
     summ = summarize(points)
     _print_report(points, summ, meta, n=len(scored))
     OUT.write_text(json.dumps({"meta": meta, "n": len(scored), "points": points, **summ}, indent=2))
-    print(f"  wrote {OUT.name} (curve data for plotting)\n")
+    print(f"  wrote {OUT.name} (curve data for plotting)")
+    if args.plot:
+        plot_curve(points, summ, PNG)
 
 
 if __name__ == "__main__":

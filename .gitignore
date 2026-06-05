@@ -48,5 +48,6 @@ out/
 *.sqlite
 *.sqlite3
 
-# Generated eval artifacts
+# Generated eval artifacts (calibration.png is committed for the README)
 eval/calibration.json
+eval/noise_floor.json
