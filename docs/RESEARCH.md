@@ -13,7 +13,7 @@ Agent safety is almost always modeled as a **perfect, infinite human** checking 
 false, and the failure of all three is the contribution:
 
 1. **No ground truth.** "Is this action too risky to auto-run?" is a *subjective* judgment;
-   even careful reviewers disagree. We measure it — Fleiss' κ ≈ 0.53 (*moderate* agreement)
+   even careful reviewers disagree. We measure it — Fleiss' κ ≈ 0.52 (*moderate* agreement, on the 125-action hardened set)
    on our set (`eval/noise_floor.py`). There is no single correct safety label.
 2. **The human is finite and fatiguing.** Every escalation spends attention and nudges the
    reviewer toward rubber-stamping. The reviewer is **endogenous** to the system: the guard's
@@ -111,7 +111,7 @@ pointless?*
    that turns the simulated result into a measured one.
 
 Prerequisite, shared with everything else: **scale + harden the dataset** (more, and crucially
-*harder / adversarial / ambiguous* cases — not more obvious ones). A 30-row mostly-obvious set
+*harder / adversarial / ambiguous* cases — not more obvious ones). A small or mostly-obvious set
 demonstrates the *instrument*, not a result.
 
 ---
@@ -138,6 +138,6 @@ revocable.
   asymmetric-cost framework (built) + the load-aware / endogenous-expert seam.
 - Every claim ships with **prior-art citations** and either a **measured number** or an explicit
   **"future work."**
-- The current dataset is **small (30 rows) and honestly labeled as such**; current results are
+- The current dataset is **small (125 hand-labeled rows, hardened) and honestly labeled as such**; current results are
   *method demonstrations* until the dataset is scaled and hardened.
 - Stop digging for a bigger earthquake. **Land this one.**

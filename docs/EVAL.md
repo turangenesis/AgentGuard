@@ -34,7 +34,7 @@ and the deliverable is a **curve**, not an accuracy number.
 
 **Tier 2 — cheap rigor:** inter-annotator **kappa** as the *noise floor* is **built**
 (`eval/noise_floor.py`, `python -m eval.noise_floor`) — three LLM-persona reviewers label the
-set and report Fleiss' κ (≈0.53 today, *moderate* agreement); LLM-persona labels are a **proxy**
+set and report Fleiss' κ (≈0.52 on the 125-action hardened set, *moderate* agreement); LLM-persona labels are a **proxy**
 for human annotators, reported as such. *Planned:* an **adversarial/evasion set** with the gap
 reported; a **policy-as-code CI eval** that fails the build on a safety regression.
 
