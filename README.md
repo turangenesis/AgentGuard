@@ -1,15 +1,19 @@
 # AgentGuard
 
-**Human-in-the-loop execution firewall for AI coding agents.**
+**A calibrated execution firewall for AI coding agents.**
 *OpenClaw gives agents hands. AgentGuard gives them brakes.*
 
-A **worker LLM agent** proposes actions (file, shell, git, deploy). A **guardian agent** — deterministic rules backed by LLM risk judgment — classifies each as **safe / approval-required / blocked**. Risky actions pause the agent mid-task (LangGraph `interrupt()`) and wait for a human to approve or reject. Every decision is written to an append-only audit log and shown on a live dashboard.
+> **The thesis:** Stopping an agent is a *framework feature* — a brake pedal. Knowing **when** to stop it, and **proving** the decision is calibrated, is the product. A pause button is plumbing (LangGraph hands it to you for free); what it *can't* tell you is whether your approval policy is too paranoid (humans rubber-stamp every alert until the gate is useless) or too lax (something blows up). AgentGuard makes that judgment **measurable and tunable**.
+>
+> *Anyone can stop an agent. AgentGuard knows when to — and proves it.*
 
-> **Status:** initial setup — implementation in progress. See the [roadmap](ROADMAP.md).
+A **worker LLM agent** proposes actions (file, shell, git, deploy). A **guardian** — deterministic rules backed by an LLM risk judgment — classifies each as **safe / approval-required / blocked**. Risky actions pause the agent mid-task (LangGraph `interrupt()`) and wait for a human. Every decision is audit-logged and shown on a live dashboard. And the guardian's judgment is **evaluated as a calibration problem** — *selective classification under asymmetric cost with noisy labels* — so its risk tolerance is a measured dial, not a vibe.
 
-## Why
+> **Status:** MVP built — worker + guardian + HITL gate + audit + live dashboard + a **calibration eval**. Stage 1 (calibration depth + adversarial robustness) is next. See the **[roadmap](ROADMAP.md)**.
 
-As teams run AI coding agents across repos, they need a layer that **judges, gates, and logs** agent actions before they touch secrets, the `main` branch, or production. AgentGuard is that layer — and a demonstration of **multi-agent orchestration** (a guardian agent supervising a worker agent) with a **human in the loop**.
+## The problem (why this isn't "just a pause button")
+
+As agents get real hands — deploy, delete, spend money, touch prod — the bottleneck isn't *can* we stop them; frameworks already do that. The bottleneck is *can we trust the thing deciding when to stop them.* Over-gate and humans rubber-stamp every alert until the guard is useless; under-gate and something blows up. Today that line is usually set by vibes. AgentGuard sets it **with data**.
 
 ## How it works
 
@@ -22,15 +26,19 @@ worker agent → proposes action → guardian (rules → LLM) ─┬─ SAFE    
                                           → append-only audit log + live dashboard
 ```
 
-## Roadmap
+The gate is the **substrate**. The **moat** is the layer above it: measuring whether the gate's judgment is any good.
 
-The MVP is the foundation; each stage above it hardens or extends the control plane:
+## The calibration eval (the moat)
 
-- **Stage 1 — Adversarial robustness** *(next)* — red-team the guardian against prompt injection; measure attack-hold rate vs. a baseline.
-- **Stage 2 — Real sandboxed execution** — stop a *real* `rm -rf`, not a simulated one.
-- **Stage 3 — Fleet control tower**, plus **remote approval** — approve / reject from your phone.
+The guardian emits a **0–100 risk score** per action. Sweeping the auto-allow-vs-escalate threshold produces the **safety/utility tradeoff curve** — missed-danger rate vs false-alarm rate — under an **asymmetric cost matrix** (auto-allowing danger is catastrophic; a false alarm is annoyance).
 
-Full detail → **[ROADMAP.md](ROADMAP.md)**.
+```bash
+python -m eval.calibrate     # prints the sweep + cost-minimizing & Neyman-Pearson points + AURC
+```
+
+On the current **30-row hand-labeled set** (small, reported as such — not a published benchmark), the LLM-scored guardian hits a sweet spot at **0% dangerous-miss with ~10% false-alarm**, and the curve shows exactly what each click of "more permissive" costs in missed danger. That's the artifact: *pick your risk tolerance with data, not vibes.* Deeper rigor — a measured noise floor (kappa), an adversarial/evasion set, published benchmarks (AgentDojo, InjecAgent), and frontier methods (conformal prediction, trajectory-level guarding) — is **[Stage 1](ROADMAP.md)**.
+
+> **The throughline:** *Stopping an agent is a framework feature. Knowing when to stop it — selective classification under asymmetric cost with label noise — is the problem, and here's the curve that proves mine is calibrated.*
 
 ## Getting Started
 
@@ -42,23 +50,21 @@ cp .env.example .env                    # add ANTHROPIC_API_KEY (and optional La
 ## Usage
 
 ```bash
-uvicorn agentguard.api:app --reload     # dashboard → http://localhost:8000
-python -m scripts.demo                  # demo: worker proposes, guardian gates, you approve
+uvicorn agentguard.api:app              # dashboard → http://localhost:8000 (Run demo needs no key)
 ```
 
-Tests use a fake worker and need **no** API key. Real runs and the eval require `ANTHROPIC_API_KEY`.
+The dashboard shows a live activity feed, pending approvals with the guardian's reasoning, approve/reject, and a per-run cost line. The **Run demo** button drives a full SAFE → BLOCKED → APPROVAL flow with **no API key**.
 
 ## Development
 
 ```bash
-pytest                                  # unit + integration
+pytest                                  # unit + integration (no API key needed)
 python -m eval.run_eval                 # guardian confusion matrix + recall / precision
-bash scripts/smoke-check.sh             # scaffolding checks (+ pytest once implemented)
+python -m eval.calibrate                # the calibration curve (cost matrix, sweep, NP point, AURC)
+bash scripts/smoke-check.sh             # key-file checks + pytest
 ```
 
-Evaluation is **cost-aware by design** — prompt caching, the Message Batches API,
-pre-recorded worker traces, and stratified sampling, with a built-in judge cost/cache meter
-(`GET /api → judge_cost`). Methodology and targets → **[docs/EVAL.md](docs/EVAL.md)**.
+Evaluation is **cost-aware by design** — prompt caching, the Message Batches API, pre-recorded worker traces, and stratified sampling, with a built-in judge cost/cache meter (`GET /api → judge_cost`). Methodology and targets → **[docs/EVAL.md](docs/EVAL.md)**.
 
 ## Stack
 

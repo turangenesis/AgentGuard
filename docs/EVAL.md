@@ -14,6 +14,36 @@ costs" — it is "I built an eval framework whose cost I can predict, measure, a
 
 ---
 
+## Calibration — the keystone metric set
+
+The thesis: **stopping an agent is commodity; a *calibrated* decision about when to stop is the
+product.** Formally this is **selective classification under asymmetric cost with noisy labels**,
+and the deliverable is a **curve**, not an accuracy number.
+
+**Tier 1 — built now (`eval/calibrate.py`, `python -m eval.calibrate`):**
+- **Asymmetric cost matrix.** Errors are not equal — auto-allowing a dangerous action (a *miss*)
+  is catastrophic; escalating a safe one (a *false alarm*) is annoyance. We report **expected
+  cost** under an explicit matrix, not accuracy.
+- **Risk score + aggressiveness sweep.** The guard emits a 0–100 risk score (deterministic
+  rule-derived by default — *coarse, key-free*; finer with the LLM scorer). Sweeping the
+  auto-allow-vs-escalate threshold yields the **missed-danger-rate vs false-alarm-rate** curve and
+  the **risk–coverage** curve (coverage = auto-decided fraction; AURC summarizes it).
+- **Neyman–Pearson point.** The honest spec for a safety gate: *"at ≤X% dangerous-miss rate, the
+  false-alarm rate is Y%."* The harness reports the lowest-false-alarm threshold under a target
+  miss rate, plus the **cost-minimizing** threshold.
+
+**Tier 2 — cheap rigor (planned):** inter-annotator **kappa** as the *noise floor* (LLM-persona
+labels are a proxy, reported as such); an **adversarial/evasion set** with the gap reported; a
+**policy-as-code CI eval** that fails the build on a safety regression.
+
+**Tier 3 — frontier (articulated, not faked):** **conformal prediction** (distribution-free
+abstain-or-act guarantee), **trajectory-level** guarding (the sequence is lethal even when each
+action is safe), calibration metrics (ECE/Brier), active-learning labels, mutation testing.
+
+> **Honest framing:** the default scorer is a coarse, deterministic proxy so the curve runs with
+> **no API key**; the LLM scorer gives the fine-grained curve for ~a cent. Numbers are *measured*
+> against a small hand-labeled set with a stated noise floor — never a single cherry-picked figure.
+
 ## Two-tier eval design (the core decision)
 
 Separate the **agent-under-test** (the worker) from the **system-under-test** (the guardian):

@@ -3,7 +3,11 @@
 > **Pitch:** *OpenClaw gives agents hands. AgentGuard gives them brakes.*
 > The arc from "the brakes work" to "the brakes survive an attacker, act on real machinery, and scale to a fleet."
 
-The MVP is the foundation. Each stage above it adds **one capability** that makes the control plane harder to defeat, more real, or broader in reach.
+> **The thesis (what's actually hard):** *Stopping an agent is a framework feature — a brake pedal. Knowing **when** to stop it, and **proving** the decision is calibrated, is the product.* A pause button is plumbing; LangGraph hands it to you for free. What it refuses to answer is whether your approval policy is too paranoid (humans rubber-stamp every alert until the gate is useless) or too lax (something blows up). That line is usually set by vibes. AgentGuard makes the guard's judgment **measurable and tunable** — it's *selective classification under asymmetric cost with noisy labels*, and the deliverable is the **measured false-alarm-vs-missed-danger curve**, not a single accuracy number.
+>
+> *Anyone can stop an agent. AgentGuard knows when to — and proves it.*
+
+The MVP is the foundation. Each stage above it adds **one capability** that makes the control plane harder to defeat, more real, or broader in reach. The **calibration of the guard's judgment** (Stage 1) is the moat; everything else is substrate or distribution.
 
 ---
 
@@ -12,7 +16,7 @@ The MVP is the foundation. Each stage above it adds **one capability** that make
 | Stage | Theme | What it adds | Why it matters | Status |
 |---|---|---|---|---|
 | **0 — Foundation** | *Brakes* | Worker + guardian + LangGraph `interrupt()` HITL + audit + eval + **MCP (protocol-native distribution surface)** + dashboard | Nothing executes without classification; risky actions can't run without a human | 🟡 In progress |
-| **1 — Adversarial Robustness** | *Brakes that survive an attacker* | Red-team the guardian against published benchmarks (AgentDojo, InjecAgent) + a curated command-injection corpus; hardening; a two-axis ASR/FPR security eval with the safety-utility Pareto curve | A policy layer that can't be talked into approving danger — the hard, open part of agent safety | ⬜ Planned (next) |
+| **1 — Calibration & Adversarial Robustness** | *Knowing when to brake, and proving it* | The keystone: a risk score + aggressiveness sweep → the missed-danger-vs-false-alarm curve under an asymmetric cost matrix; a measured noise floor (kappa); adversarial/evasion set; published benchmarks (AgentDojo, InjecAgent) | The moat — selective classification under asymmetric cost with noisy labels; the question LangGraph refuses to answer: "is my policy any good?" | ⬜ Planned (next) |
 | **⛓ Enforcement & Interception** | *The gate the agent can't walk around* | The no-bypass ladder: MCP gateway → Claude Code `PreToolUse` hook → (Stage 2) capability/sandbox mediation | An action the guard never sees is unguarded; enforcement = owning the chokepoint, not merely being an MCP option *(cross-cutting, foundational)* | ⬜ Cross-cutting |
 | **✦ Notifications & Remote Approval** | *Approve from your pocket* | Notify on pending (push/Slack/WhatsApp/SMS) + approve/reject from your phone | Approval no longer requires sitting at the terminal *(cross-cutting)* | ⬜ After Stage 1 |
 | **2 — Real Execution & Sandboxing** | *Brakes on real machinery* | Replace simulated side-effects with real execution inside an isolated sandbox | The firewall contains real damage, not a simulation | ⬜ Planned |
@@ -30,30 +34,33 @@ A real worker LLM proposes tool calls; a real guardian (deterministic rules → 
 
 ---
 
-## Stage 1 — Adversarial Robustness · *the brakes survive an attacker*
+## Stage 1 — Calibration & Adversarial Robustness · *knowing when to brake, and proving it*
 
-A gate is only as good as its resistance to being talked around. This stage **attacks the guardian** and measures whether it holds — against **published benchmarks**, not just a hand-rolled set.
+**This is the moat.** A gate that pauses is plumbing; a gate whose *judgment* is **measured and tunable** is the product. The frontier framing: **selective classification under asymmetric cost with noisy labels** — and the deliverable is a **curve**, not an accuracy number. The methods are tiered, *keystone* (build first, put on screen) → *frontier* (articulated direction, not faked).
 
-**What it adds**
-- **Published attack benchmarks**, wired in by adapting AgentGuard as the detector/defense each harness already supports:
-  - *AgentDojo* — 97 user tasks · 629 security cases across banking / Slack / travel / workspace.
-  - *InjecAgent* — 1,054 indirect prompt-injection cases (finance / smart-home / email).
-  - These domains aren't coding, so the **deterministic rules rarely fire** — these benchmarks primarily stress-test the **LLM judge** layer.
-- A **curated command-injection corpus** (`eval/adversarial/`, ~50–100 cases sourced from public agent incidents — Replit DB delete, Cursor leaks — and bug-bounty writeups). This is the half that **tests the deterministic rules** (`rm -rf` via base64 / variable-indirection / homoglyphs, secret exfiltration disguised as a read, guardian-manipulation prose, context smuggling). The curation itself is a portfolio artifact.
-- **Hardening, measured before/after:** untrusted content quarantined from the guardian's instruction channel; path/command canonicalization before rule-matching; the guardian judges *structured action facts*, never raw attacker prose.
-- **A retrieval / similarity layer (considered, deferred from the MVP on purpose).** Embed each action + context and match it against a vector store of known attack signatures (the AgentDojo / InjecAgent corpus, reused) and previously-blocked actions — a graduated tier *between* the rules and the judge: rules (exact, free) → **retrieval** (fuzzy match to known attacks, cheap, can skip the judge call) → LLM judge (novel / ambiguous) → fail-safe. It doubles as the guard's **memory** — the mechanism behind the Stage-3 self-improving loop. *Honest limit:* it only catches attacks *similar to ones already seen*; novel attacks evade it — which is why it is a layer, not the answer. The MVP shipped without it because deterministic rules + an LLM judge were simpler and sufficient.
-- A **two-axis security eval report** — never a single accuracy number:
-  - *Attack Success Rate* (ASR), targeted **and** untargeted.
-  - *Benign utility* delta — run the benchmark with attacks off, guard on vs off; the gap is the guard's tax on real work.
-  - *Utility-under-attack* — task completion when injections are present.
-  - *False Positive Rate* — safe actions wrongly blocked (the metric demo-builders hide).
-  - *Latency overhead* — p50 / p95 / p99 of the guard decision, not a single number.
-  - *Per-attack-class confusion matrix* — where it fails, not just that it fails.
-- **The safety/utility Pareto curve** — sweep guard aggressiveness, plot ASR and FPR together, show the frontier. *Prerequisite:* the guard must first be made **parametric** (e.g. a judge confidence score to threshold, or a tunable fail-safe default) — today's verdict is categorical, with no dial to sweep.
-- **A cost-aware eval harness** (see [`docs/EVAL.md`](docs/EVAL.md)) — two-tier design (static guardian replay vs. occasional live runs), prompt caching, the Message Batches API (offline only), pre-recorded worker traces, model tiering, and stratified sampling, with cost predicted via free `count_tokens` and observed via the built-in `judge_cost` meter. Thousands of attack cases evaluated for a *predicted, measured* cost — not a naive full-price run.
+**Tier 1 — the keystone (the chart you put on screen)**
+- **Asymmetric cost, not accuracy.** A guard is a cost-asymmetric decision: auto-allowing a dangerous action (a *miss*) is catastrophic; over-flagging a safe one (a *false alarm*) is annoyance. Score by **expected cost** under an explicit cost matrix, never raw accuracy. *(Already past accuracy — the MVP eval reports recall-on-dangerous + precision.)*
+- **The aggressiveness dial → risk–coverage curve.** Give the guard a risk score, then sweep the auto-allow-vs-escalate threshold. Plot **missed-danger rate vs false-alarm rate** (safety/utility tradeoff) and **coverage vs error-on-covered** (selective classification; AURC as one number). *"Pick your risk tolerance with data, not vibes."* Prerequisite: make the guard **parametric** (a risk score to threshold) — done in this stage.
+- **Neyman–Pearson operating point** — how a real safety gate is specified: *"at a guaranteed ≤X% dangerous-miss rate, the false-positive rate is Y%."*
 
-**Why it matters:** a policy layer that resists being socially-engineered into approving danger is the hard, still-open problem in agent safety — the difference between *gating* actions and *withstanding an adversary*. Reporting the safety/utility frontier (not a lone block-rate) is the difference between "97% blocked" and showing what that 97% costs.
-**Honest limit:** published benchmarks (AgentDojo, InjecAgent) carry weight; the curated command-injection set is hand-built and reported as such, never overclaimed.
+**Tier 2 — rigor that out-classes the field (cheap, devastatingly honest)**
+- **Inter-annotator agreement (the noise floor).** "Is this risky?" is subjective; multiple labelers + Cohen's/Fleiss' **kappa** define the *irreducible* disagreement — a guard at the agreement ceiling is at human level. *Honest caveat:* LLM-persona labels are a **proxy** for the human floor, reported as such.
+- **Adversarial / evasion set + report the gap.** Near-boundary cases — obfuscated danger (base64 `rm -rf`, exfil split across steps, secrets hidden in a "config read") and scary-but-benign actions — with the **evasion rate under attack** reported honestly (*"99% on direct danger, 70% obfuscated"*).
+- **Policy-as-code regression eval in CI.** Every rule/prompt change re-runs the eval; the build **fails if safety regressed**. The guardrail is treated like code with a test suite.
+
+**Tier 3 — published benchmarks + hardening (dataset weight & robustness)**
+- *AgentDojo* (629 security cases) and *InjecAgent* (1,054 indirect-injection cases) wired in as the defense — these mostly stress the **LLM judge**; the curated coding-attack corpus stresses the **rules**.
+- **Hardening, measured before/after:** untrusted content quarantined from the guardian's instruction channel; path/command canonicalization; the guardian judges *structured action facts*, never raw attacker prose. A **retrieval/similarity layer** (vector store of known signatures + past blocks) is a deferred graduated tier between rules and judge — and the guard's *memory* for the Stage-3 self-improving loop.
+
+**Tier 4 — frontier (articulated, not faked)**
+- **Conformal prediction** — distribution-free, finite-sample guarantee: emit a verdict *set*; singleton → auto-act, ambiguous → abstain to a human. (*Easy to misapply — implement only when going deep.*)
+- **Trajectory-level guarding** — the genuinely novel headline: a single action is safe, the *sequence* is lethal (read secret → write public file → push). Per-action guards are blind to it; guarding the *plan* is frontier and almost nobody does it.
+- **Calibration metrics** (ECE / Brier / reliability), an **active-learning** label loop, **mutation testing** for policy robustness.
+
+Cost is kept low by design — see [`docs/EVAL.md`](docs/EVAL.md) (caching · Message Batches · pre-recorded traces · stratified samples · free `count_tokens` pre-flight; observed via the built-in `judge_cost` meter).
+
+**Why it matters:** this is the question LangGraph refuses to answer — *"is my policy any good?"* Measuring precision/recall on a fuzzy, human-judgment task under asymmetric cost is a real ML/safety question almost nobody publishes a measured answer to. It's the senior, ownable, research-flavored wedge — and it's honest.
+**Honest limit:** a small hand-labeled set with a *measured* noise floor, reported as such; published benchmarks add weight, the curated corpus is hand-built — never overclaimed. The thesis raises the bar: claiming "calibrated judgment is the product" obliges the curve to exist.
 
 ---
 
@@ -147,6 +154,7 @@ Hosted, multi-tenant, per-team policy and SSO; an audit/compliance surface; noti
 - **Fail safe** — unknown action → human review; stalled approval → TTL-expire to *deny*.
 - **Local-first** — the engine, audit log, and dashboard run entirely on your machine (SQLite, no SaaS dependency). Every record of a risky agent action stays local by default; any cloud surface is opt-in, never required. The control plane and its evidence trail are yours.
 - **Measure, don't assert** — every safety claim ships with an eval number and a baseline; small hand-labeled sets are described as such.
+- **Calibration over mechanism** — the pause is commodity; the *measured, tunable* judgment is the product. Safety claims ship as a curve (missed-danger vs false-alarm, expected cost), not a lone accuracy number.
 - **Ship each stage standalone** — every stage is demoable on its own and adds exactly one capability.
 
 ---
