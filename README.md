@@ -11,7 +11,9 @@ AI agents now **run** code — deploy, delete, push to `main`. The usual safety 
 
 > *Anyone can stop an agent. AgentGuard measures **when** to — and shows the cost of every setting.*
 
-**See it in 60 seconds (no API key):** `uvicorn agentguard.api:app` → open the dashboard → **Run demo** (watch a `rm -rf` get blocked and a prod deploy pause for approval) → scroll to **Calibration explorer** and drag the dial.
+**[▶ Live demo](https://turangenesis.github.io/AgentGuard/)** — block a `rm -rf`, approve a deploy, drag the calibration dial. No install, no API key.
+
+**Or run it locally in 60 seconds (no API key):** `uvicorn agentguard.api:app` → open the dashboard → **Run demo** (watch a `rm -rf` get blocked and a prod deploy pause for approval) → scroll to **Calibration explorer** and drag the dial.
 
 ## The problem (why this isn't "just a pause button")
 
