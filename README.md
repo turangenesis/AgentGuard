@@ -59,6 +59,8 @@ That's *selective classification under asymmetric cost with noisy labels **and a
 
 **Scope, stated honestly:** this matters **only where the judgment is subjective with delayed outcomes** (agent oversight, content moderation, alert triage) — **not** where there's objective ground truth (e.g. banking fraud, where you just use the better predictor). And it's **positioned against prior art**: trajectory-level guarding (ShieldAgent, Trajectory Guard) and learning-to-defer/complementarity are *cited, not claimed* — we claim only the endogenous-expert coupling, and flag it to verify before publishing.
 
+> The **full paper skeleton + the project's intellectual journey** (so nothing is lost between sessions) lives in **[docs/PAPER.md](docs/PAPER.md)**.
+
 ## Getting Started
 
 ```bash
