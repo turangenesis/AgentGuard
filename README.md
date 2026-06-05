@@ -55,7 +55,7 @@ The deepest version of the thesis (full detail → **[docs/RESEARCH.md](docs/RES
 
 > **more human oversight can make a system *less* safe — the safety-optimal guard escalates *below* the human's capacity.**
 
-That's *selective classification under asymmetric cost with noisy labels **and an endogenous expert*** — the last clause is the novel seam, buildable now as a simulated inverted-U experiment.
+That's *selective classification under asymmetric cost with noisy labels **and an endogenous expert*** — the last clause is **prior art** (FALCON / DeCCaF), which we *demonstrate* in the LLM-agent setting via a simulated inverted-U experiment.
 
 **Scope, stated honestly:** this matters **only where the judgment is subjective with delayed outcomes** (agent oversight, content moderation, alert triage) — **not** where there's objective ground truth (e.g. banking fraud, where you just use the better predictor). And it's **honestly positioned**: a novelty check confirmed the core mechanisms are *prior art* — the endogenous-fatiguing-reviewer + load-aware deferral is **FALCON / DeCCaF**, the flooding attack is SOC alert-fatigue, trajectory guarding is ShieldAgent et al. **This is an applied / measurement / systems project, not a novel-theory paper** — the contribution is the open-source firewall + the measurement that brings these ideas together for LLM agents.
 
