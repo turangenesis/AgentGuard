@@ -47,3 +47,6 @@ out/
 *.db-journal
 *.sqlite
 *.sqlite3
+
+# Generated eval artifacts
+eval/calibration.json
