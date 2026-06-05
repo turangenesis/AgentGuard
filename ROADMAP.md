@@ -7,6 +7,8 @@
 >
 > *Anyone can stop an agent. AgentGuard knows when to — and proves it.*
 
+> **★ The research apex — "Oversight Has a Capacity"** (full detail → [`docs/RESEARCH.md`](docs/RESEARCH.md)). The deepest version of the thesis: the human reviewer is not a perfect oracle — they are **subjective** (no ground-truth "safe" label; measured Fleiss' κ ≈ 0.53) and **endogenous** (escalation fatigues them). So the optimal *when-to-escalate* policy is **load-aware**, and realized safety is an **inverted-U**: *more human oversight can make a system **less** safe, and the safety-optimal guard escalates **below** capacity.* This is *selective classification under asymmetric cost with noisy labels **and an endogenous expert*** — the last clause is the novel seam. (Applies only where the label is subjective, e.g. agent oversight — **not** where there's ground truth like banking.)
+
 The MVP is the foundation. Each stage above it adds **one capability** that makes the control plane harder to defeat, more real, or broader in reach. The **calibration of the guard's judgment** (Stage 1) is the moat; everything else is substrate or distribution.
 
 ---
@@ -52,9 +54,10 @@ A real worker LLM proposes tool calls; a real guardian (deterministic rules → 
 - *AgentDojo* (629 security cases) and *InjecAgent* (1,054 indirect-injection cases) wired in as the defense — these mostly stress the **LLM judge**; the curated coding-attack corpus stresses the **rules**.
 - **Hardening, measured before/after:** untrusted content quarantined from the guardian's instruction channel; path/command canonicalization; the guardian judges *structured action facts*, never raw attacker prose. A **retrieval/similarity layer** (vector store of known signatures + past blocks) is a deferred graduated tier between rules and judge — and the guard's *memory* for the Stage-3 self-improving loop.
 
-**Tier 4 — frontier (articulated, not faked)**
-- **Conformal prediction** — distribution-free, finite-sample guarantee: emit a verdict *set*; singleton → auto-act, ambiguous → abstain to a human. (*Easy to misapply — implement only when going deep.*)
-- **Trajectory-level guarding** — the genuinely novel headline: a single action is safe, the *sequence* is lethal (read secret → write public file → push). Per-action guards are blind to it; guarding the *plan* is frontier and almost nobody does it.
+**Tier 4 — frontier**
+- **★ The research seam — "Oversight Has a Capacity" (the actual novel contribution; see [`docs/RESEARCH.md`](docs/RESEARCH.md)).** The human reviewer is **endogenous**: escalation fatigues them, so the optimal deferral policy must be **load-aware**, and uncertainty-based deferral is *fatigue-suboptimal*. Buildable now via a **simulated inverted-U** experiment (model `r(load)`, sweep escalation rate, show the optimum is below capacity); fatigue is also an **attack surface** (bury a malicious action in routine ones to induce rubber-stamping). Prior art cited (complementarity / learning-to-defer assume a *static* expert); we claim only the endogenous-expert coupling — **verify before publishing.**
+- **Trajectory-level guarding — PRIOR ART we *implement*, not claim** ([Trajectory Guard](https://arxiv.org/pdf/2601.00516), [ShieldAgent](https://arxiv.org/pdf/2503.22738), AgentAuditor): a single action is safe but the *sequence* is lethal (read secret → write public file → push). It's a **detection** layer on the orthogonal "what we inspect" axis — the load-aware oversight layer *consumes* it; the two compose, neither builds on the other.
+- **Conformal prediction** — distribution-free abstain-or-act guarantees (easy to misapply; implement only when going deep).
 - **Calibration metrics** (ECE / Brier / reliability), an **active-learning** label loop, **mutation testing** for policy robustness.
 
 Cost is kept low by design — see [`docs/EVAL.md`](docs/EVAL.md) (caching · Message Batches · pre-recorded traces · stratified samples · free `count_tokens` pre-flight; observed via the built-in `judge_cost` meter).

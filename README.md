@@ -47,6 +47,16 @@ On the current **30-row hand-labeled set** (small, reported as such — not a pu
 
 > **The throughline:** *Stopping an agent is a framework feature. Knowing when to stop it — selective classification under asymmetric cost with label noise — is the problem, and here's the curve that shows the tradeoff and lets me set the operating point with data.*
 
+## Research direction — "Oversight Has a Capacity"
+
+The deepest version of the thesis (full detail → **[docs/RESEARCH.md](docs/RESEARCH.md)**). Agent safety is usually modeled as a *perfect, infinite human* checking a fallible agent against a *ground-truth* "safe." All three are false: the label is **subjective** (no ground truth; measured Fleiss' κ ≈ 0.53), the human is **endogenous** (escalation fatigues them — the guard degrades its own oracle), and the cost is **asymmetric**. So the optimal *when-to-escalate* policy must be **load-aware**, and realized safety is an **inverted-U**:
+
+> **more human oversight can make a system *less* safe — the safety-optimal guard escalates *below* the human's capacity.**
+
+That's *selective classification under asymmetric cost with noisy labels **and an endogenous expert*** — the last clause is the novel seam, buildable now as a simulated inverted-U experiment.
+
+**Scope, stated honestly:** this matters **only where the judgment is subjective with delayed outcomes** (agent oversight, content moderation, alert triage) — **not** where there's objective ground truth (e.g. banking fraud, where you just use the better predictor). And it's **positioned against prior art**: trajectory-level guarding (ShieldAgent, Trajectory Guard) and learning-to-defer/complementarity are *cited, not claimed* — we claim only the endogenous-expert coupling, and flag it to verify before publishing.
+
 ## Getting Started
 
 ```bash
