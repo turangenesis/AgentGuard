@@ -266,13 +266,65 @@ optimum (§5.3) and denies the attacker the load they need. (Simulation, same fa
 
 ---
 
-## 7. Future Work
+## 7. Future Work — an agenda for trustworthy agent oversight
 
-Fit `r(ℓ)` from a **human study** (the empirical grounding); a **load-aware deferral policy** that
-escalates by *expected value of review* rather than uncertainty alone (the simulations here motivate
-it; a learned policy is the natural next artifact); formal **calibration metrics** (ECE/reliability)
-and **conformal** abstention; and scaling to **published benchmarks** (AgentDojo, InjecAgent) for
-external validity.
+The measurement apparatus here is a foundation, not an endpoint. Everything below is **open
+direction, not result** — but each builds directly on what is already built, and together they
+sketch what a *complete* agent-oversight system would require. We group them by the assumption each
+one relaxes.
+
+**7.1 From modeled fatigue to measured fatigue (the empirical core).** The inverted-U is simulated;
+the obvious next artifact is a **human study** that fits `r(ℓ)` from real reviewers and re-measures
+the noise floor with human annotators rather than LLM personas. Even a small pilot (a handful of
+reviewers, an interruptible labeling session) would convert the headline from "under a plausible
+fatigue model…" to "under *measured* fatigue…" — and would yield, to our knowledge, the first
+empirical fatigue curve for *agent-action* review specifically.
+
+**7.2 From uncertainty-based to value-of-review deferral.** Today's policy escalates by a risk
+threshold. The fatigue results motivate a **learned, load-aware policy** that escalates by the
+*expected value of human review* — conditioning on the reviewer's remaining attention budget and on
+whether a human is even likely to outperform the guard on this case. Past a load threshold the
+optimal action is to *not* escalate a borderline case, because the depleted human will decide it
+worse than the calibrated guard. This is the natural learned successor to the threshold sweep.
+
+**7.3 From cooperative to enforced oversight (the no-bypass ladder).** Our MCP integration is
+*cooperative* — the agent is configured to ask. A control plane is only as strong as the actions it
+actually sees, so the foundational open problem is **interception completeness**: an MCP **gateway**
+(the agent's only path to its tools), **host hooks** (e.g. Claude Code `PreToolUse`, covering native
+tools too), and ultimately **capability/sandbox mediation**, where the agent runs without the real
+filesystem/network/deploy capability and the guard mediates the syscall. Only the last gives *true*
+no-bypass. Enforcement is owning the chokepoint, not requesting cooperation — a security problem as
+much as an ML one.
+
+**7.4 From per-action to trajectory and multi-agent risk.** A single action can be safe while the
+*sequence* is lethal (read secret → write public file → push); trajectory-level guarding [1,2] is the
+detection layer this oversight calibration would consume. Further out lies a genuinely
+under-explored frontier: **emergent multi-agent risk**, where N agents are each individually
+compliant but their *joint* action space is dangerous (agent A reads, B writes, C deploys). Guarding
+a fleet's combined behaviour — and calibrating oversight across it — is the step from a tool to a
+platform, and where fatigue compounds: one reviewer cannot be the oracle for many agents.
+
+**7.5 From static to self-improving policy.** The guard is currently a fixed ruleset plus a judge.
+Its own **audit log is a training signal**: which actions a reviewer *always* approves vs. *always*
+blocks, and which adversarial cases slipped through. A closed loop — adapt thresholds from the
+approve/reject record, and let a model *propose* new rules from the misses, re-evaluated before they
+ship — would make the gate *learn from every human decision and every attack it let slip*. This is
+the same meta-agent → feedback-agent loop used to improve task agents, redirected at the *safety
+policy* instead.
+
+**7.6 From operating points to guarantees, and from a curated set to benchmarks.** Two rigor axes:
+**conformal prediction** for distribution-free abstain-or-act guarantees (emit a verdict *set*;
+singleton → auto-act, ambiguous → defer — with a provable error bound) and formal **calibration**
+(ECE / reliability diagrams); and **external validity** by scaling the dataset (more, harder,
+human-labeled) and wiring in published benchmarks (AgentDojo, InjecAgent) so the measurements
+generalize beyond our 125 cases.
+
+**7.7 From a one-way gate to consented, reliability-weighted delegation.** Finally, the most
+forward-looking direction: once both parties' reliability is *measured* per category, the operator
+could **consensually and revocably delegate** specific decision classes to the guard where the data
+shows it outperforms a fatigued human — making oversight a two-way, data-grounded allocation of
+authority rather than a one-way gate. This must remain consent-based and revocable (see §8); we flag
+it as a direction precisely because it is where the ethics and the measurement meet.
 
 ---
 
