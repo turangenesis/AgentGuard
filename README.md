@@ -1,17 +1,17 @@
 # AgentGuard
 
-**A working human-in-the-loop firewall for AI coding agents — and a research vehicle for one question: how do you calibrate oversight when the human reviewer is subjective and fatiguing?**
+### A human-in-the-loop firewall for AI coding agents — and a measurement study of *when* to trust the human.
 *OpenClaw gives agents hands. AgentGuard gives them brakes.*
 
-It's two things at once, on purpose:
-- **The system** — a real HITL firewall: a **worker LLM agent** proposes actions (file, shell, git, deploy); a **guardian** (deterministic rules + LLM risk judgment) classifies each as **safe / approval-required / blocked**; risky actions pause the agent mid-task (LangGraph `interrupt()`) and wait for a human; every decision is audit-logged and shown on a live dashboard.
-- **The research** — the guardian's judgment is treated as a measurable problem, not a vibe: *selective classification under asymmetric cost with noisy labels — and an endogenous expert.* That last clause is the open question this system exists to investigate (see **[Research direction](#research-direction--oversight-has-a-capacity)** and **[docs/RESEARCH.md](docs/RESEARCH.md)**).
+AI agents now **run** code — deploy, delete, push to `main`. The usual safety answer is a human-approval gate. But a pause button is the easy part; the hard part is the **judgment** (which actions to stop) and the fact that the **human reviewer is subjective and gets tired**. AgentGuard is both a working gate *and* the apparatus that **measures** that judgment instead of guessing at it.
 
-> **The thesis:** Stopping an agent is a *framework feature* — a brake pedal LangGraph hands you for free. Knowing **when** to stop it, and **measuring** whether that judgment is any good, is the hard part. Over-gate and humans rubber-stamp every alert until the gate is useless; under-gate and something blows up.
->
-> *Anyone can stop an agent. AgentGuard knows when to — and measures it.*
+**Two things at once, on purpose:**
+- 🛠️ **The system** — a worker LLM agent proposes actions; a guardian (deterministic rules + LLM risk judgment) classifies each **safe / approval-required / blocked**; risky ones pause the agent mid-task (LangGraph `interrupt()`) and wait for a human; every decision is audit-logged on a live dashboard with an interactive **calibration dial**.
+- 📊 **The measurement** — we frame the guard as *selective classification under asymmetric cost with noisy labels and a fatiguing reviewer*, and measure it: a calibration curve, a noise floor (Fleiss' κ = 0.52), the safety-vs-oversight **inverted-U**, a flooding **attack**, and model-dependence — five figures, all reproducible. *(Honest scope: an applied/measurement project. The mechanisms — fatigue-aware deferral, flooding attacks — are prior art we cite; the contribution is the open-source system + the measurement. See **[docs/DRAFT.md](docs/DRAFT.md)**.)*
 
-> **Status:** MVP built — worker + guardian + HITL gate + audit + live dashboard + a **calibration eval** (curve + measured noise floor). Stage 1 (calibration depth + the endogenous-expert thesis) is next. See the **[roadmap](ROADMAP.md)**.
+> *Anyone can stop an agent. AgentGuard measures **when** to — and shows the cost of every setting.*
+
+**See it in 60 seconds (no API key):** `uvicorn agentguard.api:app` → open the dashboard → **Run demo** (watch a `rm -rf` get blocked and a prod deploy pause for approval) → scroll to **Calibration explorer** and drag the dial.
 
 ## The problem (why this isn't "just a pause button")
 
