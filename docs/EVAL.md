@@ -67,6 +67,26 @@ the trajectory numbers. AgentGuard already uses the static-replay shape today
 
 ## Cost-optimization layers
 
+> **When to activate this framework:** **at benchmark scale (Stage 1 Tier 3)** — thousands of
+> calls (AgentDojo ≈ 629 + InjecAgent ≈ 1,054, × models × seeds). The cheap pieces (prompt
+> caching, the `judge_cost` meter, static-replay evals, Haiku tiering) are already on; the heavy
+> pieces (**Message Batches API**, `count_tokens` pre-flight, stratified sampling) are *deferred
+> until then* — today's runs are hundreds of calls = pennies, so batching would be premature
+> plumbing.
+
+> **Reproducibility (LLM nondeterminism):** scores run at **`temperature = 0`** (near-greedy, so
+> the same input → the same score almost every time). For the dashboard **dial / demo** we *save
+> one run* (`calibration.json`) and replay it — 100% stable, no re-rolling. For a **published
+> result**, run N times and report **mean ± spread**; a single run is a *method demo*, labeled as
+> such. A two-model comparison (Haiku vs Sonnet curve) is run the same way and is the concrete
+> form of the **model-tiering** experiment below — *planned, not yet generated.*
+
+> **What is live vs offline (the score-vs-threshold seam):** the **risk score is live** — the LLM
+> scores each real action 0–100 in production. The **threshold's *meaning*** (what a setting
+> costs in misses/false-alarms) is learned **offline from labeled data** — you can't compute a
+> miss-rate live (no ground-truth label for a real action). So you *calibrate the threshold
+> offline*, then *run it live*. The dial demonstrates the offline tuning step on saved scores.
+
 ### 1. Prompt caching on the guardian judge — *ships in Stage 0; measure, don't assume*
 The guardian's stable prefix (classification instructions, output schema, and — later —
 few-shot examples) is sent with `cache_control: {"type": "ephemeral"}`
