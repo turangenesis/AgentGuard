@@ -20,7 +20,7 @@ AgentGuard is a human-in-the-loop execution firewall for AI coding agents. A **w
 - **Dashboard:** single HTML page, Tailwind via CDN, 1s polling (no build step)
 - **Deployment target:** Local-first, single user (hosted/multi-user is future work)
 
-## Directory Structure (planned — built during implementation)
+## Directory Structure
 
 ```
 agentguard/
@@ -52,12 +52,5 @@ tests/                 # test_guardian.py, test_graph.py (fake worker → no API
 - Requires `ANTHROPIC_API_KEY` for real worker/guardian runs and the eval; tests use a fake worker and need no key.
 - Dangerous tools (write/shell/git/deploy) are **simulated**; only reads touch the real `sample-target/`.
 - The cross-call `interrupt()` → `Command(resume=…)` by `thread_id` is the linchpin (background task + correct checkpoint threading).
-- Confirm LangGraph interrupt/resume + MCP SDK APIs against current docs (early-2026 churn).
+- The LangGraph interrupt/resume and MCP SDK surfaces are evolving; the implementation tracks current published APIs for compatibility.
 - Ruleset ~10–12 rules; per-repo policy config is deferred.
-
-## TODO (fill in as the project grows)
-
-- [ ] Document the main modules once they exist.
-- [ ] Document what talks to what.
-- [ ] Document where state is stored.
-- [ ] Document the core data flow in code (not just planned).

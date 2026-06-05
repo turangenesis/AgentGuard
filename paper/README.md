@@ -33,28 +33,3 @@ cp eval/fatigue_attack.png   paper/figures/fatigue-attack.png
 
 `main.tex` has `\graphicspath{{figures/}{../eval/}}`, so it also builds in-place against `../eval/`
 if you skip the copy.
-
-## Before submitting to arXiv — checklist
-
-The draft is build-ready but **not yet submission-ready**. These are deliberate decisions, marked
-with `TODO` in `main.tex`:
-
-- [ ] **Author block** — set affiliation and a real contact email (`\author` / `\affil` / the
-      `\thanks` footnote). Currently `Emre Turan · Independent Researcher · TODO@example.com`.
-- [ ] **Code repository URL** — set `\coderepo` (currently a placeholder GitHub URL).
-- [ ] **License** — chosen at arXiv upload, not in the source. CC BY is the open default for an
-      artifact paper; arXiv's non-exclusive license is the conservative alternative.
-- [ ] **Endorsement** — a first-time arXiv submitter in `cs.AI`/`cs.LG`/`cs.CR` without an academic
-      e-mail typically needs an endorser. This is external to the repo.
-- [ ] **Primary category** — suggest `cs.LG` or `cs.CR` (cross-list the other), plus `cs.HC`.
-- [ ] **Compile + proofread the PDF** — this bundle has **not** been compiled in CI (no TeX
-      toolchain in the dev container); compile once on Overleaf/locally and read it through before
-      upload.
-- [ ] **Drop or keep the draft status** — unlike `docs/DRAFT.md`, this `.tex` has **no**
-      "working draft" banner and **no** companion-doc links, by design (those are repo-only).
-
-## Relationship to `docs/`
-
-[`docs/DRAFT.md`](../docs/DRAFT.md) is the readable, repo-internal markdown version (with the
-working-draft banner and companion links). This `.tex` is the submission artifact. Keep them in sync
-or retire `DRAFT.md` once the `.tex` is canonical, so the two don't drift.

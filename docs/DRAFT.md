@@ -1,9 +1,8 @@
 # Oversight Has a Capacity: Calibrating Agent Guards to a Subjective, Fatiguing Human
 
-> **Status: working draft.** Built from the artifacts in this repo. Numbers are from a small
-> hand-labeled set and a *single seed* at temperature 0 — reported as demonstrations, not
-> settled results. Companion: [`PAPER.md`](PAPER.md) (skeleton), [`RESEARCH.md`](RESEARCH.md)
-> (thesis detail), [`EVAL.md`](EVAL.md) (methodology). Figures live in [`../eval/`](../eval/).
+> This is the human-readable rendering of the paper; the canonical source is
+> [`paper/main.tex`](../paper/main.tex). Numbers are from a hand-labeled set and a *single seed* at
+> temperature 0 — reported as demonstrations, not settled results. Figures live in [`../eval/`](../eval/).
 
 ---
 

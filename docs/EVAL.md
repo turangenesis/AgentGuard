@@ -1,16 +1,15 @@
 # EVAL.md — Cost-Aware Evaluation Methodology
 
-> **Status: plan + targets.** This documents *how* AgentGuard's guardian is evaluated
-> and how that evaluation is kept cheap. Numbers marked _TBD_ are filled in only after
-> they are **measured** — never asserted. Most of this lands with **Stage 1**
-> ([ROADMAP.md](../ROADMAP.md)); the cost meter (layer 1) ships in Stage 0.
+> This documents *how* AgentGuard's guardian is evaluated and how that evaluation is
+> kept cheap. The calibration curve, noise floor, and cost meter are measured today;
+> numbers are reported only after they are **measured** — never asserted.
 
 Evaluating a guardian against adversarial benchmarks means **thousands of LLM calls**
 (AgentDojo ≈ 629 security cases, InjecAgent ≈ 1,054, plus a threshold sweep). Run naively
 — full-price, synchronous, re-running the whole agent each iteration — that is slow and
 expensive. The methodology below is designed so the eval is **cheap by construction**, and
-so the savings are *observable*, not claimed. The competency on display is not "I optimized
-costs" — it is "I built an eval framework whose cost I can predict, measure, and explain."
+so the savings are *observable*, not claimed. The goal is an evaluation framework whose
+cost is predictable, measurable, and explainable.
 
 ---
 
@@ -67,19 +66,18 @@ the trajectory numbers. AgentGuard already uses the static-replay shape today
 
 ## Cost-optimization layers
 
-> **When to activate this framework:** **at benchmark scale (Stage 1 Tier 3)** — thousands of
-> calls (AgentDojo ≈ 629 + InjecAgent ≈ 1,054, × models × seeds). The cheap pieces (prompt
+> **When this framework activates:** at benchmark scale — thousands of calls
+> (AgentDojo ≈ 629 + InjecAgent ≈ 1,054, × models × seeds). The cheap pieces (prompt
 > caching, the `judge_cost` meter, static-replay evals, Haiku tiering) are already on; the heavy
-> pieces (**Message Batches API**, `count_tokens` pre-flight, stratified sampling) are *deferred
-> until then* — today's runs are hundreds of calls = pennies, so batching would be premature
-> plumbing.
+> pieces (**Message Batches API**, `count_tokens` pre-flight, stratified sampling) engage at
+> that scale — current runs are hundreds of calls = pennies, where batching adds no benefit.
 
 > **Reproducibility (LLM nondeterminism):** scores run at **`temperature = 0`** (near-greedy, so
 > the same input → the same score almost every time). For the dashboard **dial / demo** we *save
 > one run* (`calibration.json`) and replay it — 100% stable, no re-rolling. For a **published
 > result**, run N times and report **mean ± spread**; a single run is a *method demo*, labeled as
 > such. A two-model comparison (Haiku vs Sonnet curve) is run the same way and is the concrete
-> form of the **model-tiering** experiment below — *planned, not yet generated.*
+> form of the **model-tiering** experiment below.
 
 > **What is live vs offline (the score-vs-threshold seam):** the **risk score is live** — the LLM
 > scores each real action 0–100 in production. The **threshold's *meaning*** (what a setting
@@ -87,7 +85,7 @@ the trajectory numbers. AgentGuard already uses the static-replay shape today
 > miss-rate live (no ground-truth label for a real action). So you *calibrate the threshold
 > offline*, then *run it live*. The dial demonstrates the offline tuning step on saved scores.
 
-### 1. Prompt caching on the guardian judge — *ships in Stage 0; measure, don't assume*
+### 1. Prompt caching on the guardian judge — *measure, don't assume*
 The guardian's stable prefix (classification instructions, output schema, and — later —
 few-shot examples) is sent with `cache_control: {"type": "ephemeral"}`
 ([guardian.py](../agentguard/policy/guardian.py)). Cache reads bill at **0.1×** base.
@@ -104,14 +102,14 @@ rather than trust it:
   stable prefix (e.g. add few-shot examples) past the threshold, where caching *also* starts
   paying off. **Target cache hit rate: ~70% _(TBD — measured, not claimed)_.**
 
-### 2. Message Batches API — *Stage 1, offline eval only*
+### 2. Message Batches API — *offline eval only*
 Eval has no real-time requirement, so submit it as a **batch job**: **50% off** input + output,
 24h SLA. The **live system** (`agentguard.api:app`) stays **synchronous** — humans approving
 actions need real-time. Batch is for the offline benchmark only. _Caveat:_ cache hits inside a
 batch are best-effort (timing varies), so model batch and caching as **additive when they
 land**, not a guaranteed multiplication.
 
-### 3. Pre-recorded worker traces — *Stage 1*
+### 3. Pre-recorded worker traces
 Run the worker **once** over AgentDojo / InjecAgent, capture every proposed action as JSONL
 (`{attack_id, proposed_action, context, expected_classification}`), then replay against the
 guardian. ~10× faster iteration; you only re-spend on the guardian itself. (This is tier-1
@@ -125,19 +123,19 @@ above.)
   Keep the shipped model honest in the eval — and treat **Haiku-judge vs Sonnet-judge hold rate**
   as an **ablation finding** ("a 5× cheaper judge concedes only X% hold rate"), not a cost compromise.
 
-### 5. Stratified sampling — *Stage 1*
+### 5. Stratified sampling
 Cut a **50–100 case** sample stratified across attack classes (direct injection, indirect
 injection, tool misuse, role manipulation). Run the sample on **every** guardian change; run the
 **full** benchmark only when sample metrics improve or before publishing.
 
-### 6. `count_tokens` pre-flight — *Stage 1*
+### 6. `count_tokens` pre-flight
 Anthropic's `count_tokens` endpoint is **free**. Call it on the batched payload first and predict
 cost before submitting: `cached_prefix × 0.1 × base + fresh_input × base + output × base`, then
 `× 0.5` for batch. Catches a runaway eval before it spends anything.
 
 ---
 
-## Metrics (cross-ref [ROADMAP.md](../ROADMAP.md) Stage 1)
+## Metrics (cross-ref [ROADMAP.md](../ROADMAP.md))
 
 Never a single accuracy number. Report: **ASR** (targeted + untargeted), **FPR**,
 **benign-utility delta** (guard on vs off, attacks off), **utility-under-attack** (needs a
@@ -149,16 +147,8 @@ live run), **latency** p50/p95/p99, a **per-attack-class confusion matrix**, and
 - **Built-in:** `GET /api → judge_cost` (the meter above) — live token + cache-hit visibility.
 - **LangSmith:** per-run traces of the worker↔guardian loop — already wired via env vars.
 
-## Operational
+## Targets
 
-- **Research credits:** apply early to the Anthropic external-researcher / OpenAI researcher
-  programs — this project's profile (AI safety, red-teaming, observability) fits what they fund.
-  Worth doing, not to be banked on; verify current program terms.
-
-## Targets (filled in only once measured)
-
-| Metric | Target | Measured |
-|---|---|---|
-| Guardian cache hit rate | ~70% | _TBD_ |
-| Cost per full-benchmark run | < $5 | _TBD_ |
-| Naive vs optimized cost reduction | — | _TBD_ |
+Cost targets are reported here only once measured against a full-benchmark run:
+guardian cache hit rate, cost per full-benchmark run, and the naive-vs-optimized
+cost reduction.

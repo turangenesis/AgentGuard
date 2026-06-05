@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Pitch:** *OpenClaw gives agents hands. AgentGuard gives them brakes.*
+> *OpenClaw gives agents hands. AgentGuard gives them brakes.*
 > The arc from "the brakes work" to "the brakes survive an attacker, act on real machinery, and scale to a fleet."
 
 > **The thesis (what's actually hard):** *Stopping an agent is a framework feature — a brake pedal. Knowing **when** to stop it, and **proving** the decision is calibrated, is the product.* A pause button is plumbing; LangGraph hands it to you for free. What it refuses to answer is whether your approval policy is too paranoid (humans rubber-stamp every alert until the gate is useless) or too lax (something blows up). That line is usually set by vibes. AgentGuard makes the guard's judgment **measurable and tunable** — it's *selective classification under asymmetric cost with noisy labels*, and the deliverable is the **measured false-alarm-vs-missed-danger curve**, not a single accuracy number.
@@ -9,7 +9,7 @@
 
 > **★ The research apex — "Oversight Has a Capacity"** (full detail → [`docs/RESEARCH.md`](docs/RESEARCH.md)). The deepest version of the thesis: the human reviewer is not a perfect oracle — they are **subjective** (no ground-truth "safe" label; measured Fleiss' κ ≈ 0.52) and **endogenous** (escalation fatigues them). So the optimal *when-to-escalate* policy is **load-aware**, and realized safety is an **inverted-U**: *more human oversight can make a system **less** safe, and the safety-optimal guard escalates **below** capacity.* This is *selective classification under asymmetric cost with noisy labels **and an endogenous expert***. **Verified prior art:** the endogenous-fatiguing-expert + load-aware deferral is [FALCON](https://arxiv.org/html/2604.00904) / [DeCCaF](https://arxiv.org/abs/2403.06906); the flooding attack is SOC alert-fatigue literature. **We don't claim the theory** — our contribution is the open-source system + the measurement (calibration, noise floor, the demonstrations). Applies only where the label is subjective, e.g. agent oversight — **not** where there's ground truth like banking.
 
-The MVP is the foundation. Each stage above it adds **one capability** that makes the control plane harder to defeat, more real, or broader in reach. The **calibration of the guard's judgment** (Stage 1) is the moat; everything else is substrate or distribution.
+The MVP is the foundation. Each stage above it adds **one capability** that makes the control plane harder to defeat, more real, or broader in reach. The **calibration of the guard's judgment** (Stage 1) is the core contribution; everything else is substrate or reach.
 
 ---
 
@@ -17,8 +17,8 @@ The MVP is the foundation. Each stage above it adds **one capability** that make
 
 | Stage | Theme | What it adds | Why it matters | Status |
 |---|---|---|---|---|
-| **0 — Foundation** | *Brakes* | Worker + guardian + LangGraph `interrupt()` HITL + audit + eval + **MCP (protocol-native distribution surface)** + dashboard | Nothing executes without classification; risky actions can't run without a human | 🟡 In progress |
-| **1 — Calibration & Adversarial Robustness** | *Knowing when to brake, and proving it* | The keystone: a risk score + aggressiveness sweep → the missed-danger-vs-false-alarm curve under an asymmetric cost matrix; a measured noise floor (kappa); adversarial/evasion set; published benchmarks (AgentDojo, InjecAgent) | The moat — selective classification under asymmetric cost with noisy labels; the question LangGraph refuses to answer: "is my policy any good?" | ⬜ Planned (next) |
+| **0 — Foundation** | *Brakes* | Worker + guardian + LangGraph `interrupt()` HITL + audit + eval + **MCP (protocol-native reach surface)** + dashboard | Nothing executes without classification; risky actions can't run without a human | 🟡 In progress |
+| **1 — Calibration & Adversarial Robustness** | *Knowing when to brake, and proving it* | The keystone: a risk score + aggressiveness sweep → the missed-danger-vs-false-alarm curve under an asymmetric cost matrix; a measured noise floor (kappa); adversarial/evasion set; published benchmarks (AgentDojo, InjecAgent) | The core contribution — selective classification under asymmetric cost with noisy labels; the question LangGraph refuses to answer: "is my policy any good?" | ⬜ Planned (next) |
 | **⛓ Enforcement & Interception** | *The gate the agent can't walk around* | The no-bypass ladder: MCP gateway → Claude Code `PreToolUse` hook → (Stage 2) capability/sandbox mediation | An action the guard never sees is unguarded; enforcement = owning the chokepoint, not merely being an MCP option *(cross-cutting, foundational)* | ⬜ Cross-cutting |
 | **✦ Notifications & Remote Approval** | *Approve from your pocket* | Notify on pending (push/Slack/WhatsApp/SMS) + approve/reject from your phone | Approval no longer requires sitting at the terminal *(cross-cutting)* | ⬜ After Stage 1 |
 | **2 — Real Execution & Sandboxing** | *Brakes on real machinery* | Replace simulated side-effects with real execution inside an isolated sandbox | The firewall contains real damage, not a simulation | ⬜ Planned |
@@ -29,18 +29,18 @@ The MVP is the foundation. Each stage above it adds **one capability** that make
 
 ## Stage 0 — Foundation (MVP) · *the brakes work*
 
-A real worker LLM proposes tool calls; a real guardian (deterministic rules → one LLM judge for the ambiguous middle) classifies each as **safe / approval-required / blocked**; risky actions pause the LangGraph run via `interrupt()` and wait for a human; every decision is audit-logged; a guardian eval prints real metrics; AgentGuard is exposed as an **MCP server (built — `agentguard/mcp_server.py`, demo `scripts/mcp_demo.py`)** — the policy engine is the server, any MCP-aware agent (Claude Code, Cursor, custom LangGraph) is the client, so adoption is ~4 lines of config rather than a LangGraph rewrite. The `interrupt()` loop stays the deep HITL artifact; MCP is the *distribution surface* on top of it, not a replacement.
+A real worker LLM proposes tool calls; a real guardian (deterministic rules → one LLM judge for the ambiguous middle) classifies each as **safe / approval-required / blocked**; risky actions pause the LangGraph run via `interrupt()` and wait for a human; every decision is audit-logged; a guardian eval prints real metrics; AgentGuard is exposed as an **MCP server (built — `agentguard/mcp_server.py`, demo `scripts/mcp_demo.py`)** — the policy engine is the server, any MCP-aware agent (Claude Code, Cursor, custom LangGraph) is the client, so adoption is ~4 lines of config rather than a LangGraph rewrite. The `interrupt()` loop stays the deep HITL artifact; MCP is the *reach surface* on top of it, not a replacement.
 
-**Why it matters:** establishes the full control loop — every action is classified, and risky ones cannot execute without a human in the loop. Framing the same engine as protocol-native ("safety layer for any MCP-compatible agent") sharpens positioning without new work.
-**Honest limit:** an approval gate on its own is becoming common; the depth, and the differentiation, lives in the stages below. MCP is a transport, not the algorithmic depth — land it *after* the Stage 1 eval, never instead of it.
+**Why it matters:** establishes the full control loop — every action is classified, and risky ones cannot execute without a human in the loop. The same engine is protocol-native ("safety layer for any MCP-compatible agent"), broadening reach without new work.
+**Honest limit:** an approval gate on its own is becoming common; the depth, and the differentiation, lives in the stages below. MCP is a transport, not the algorithmic depth — it complements the Stage 1 eval rather than substituting for it.
 
 ---
 
 ## Stage 1 — Calibration & Adversarial Robustness · *knowing when to brake, and proving it*
 
-**This is the moat.** A gate that pauses is plumbing; a gate whose *judgment* is **measured and tunable** is the product. The frontier framing: **selective classification under asymmetric cost with noisy labels** — and the deliverable is a **curve**, not an accuracy number. The methods are tiered, *keystone* (build first, put on screen) → *frontier* (articulated direction, not faked).
+**This is the core contribution.** A gate that pauses is plumbing; a gate whose *judgment* is **measured and tunable** is the product. The frontier framing: **selective classification under asymmetric cost with noisy labels** — and the deliverable is a **curve**, not an accuracy number. The methods are tiered, *keystone* (built first) → *frontier* (articulated direction, not faked).
 
-**Tier 1 — the keystone (the chart you put on screen)**
+**Tier 1 — the keystone**
 - **Asymmetric cost, not accuracy.** A guard is a cost-asymmetric decision: auto-allowing a dangerous action (a *miss*) is catastrophic; over-flagging a safe one (a *false alarm*) is annoyance. Score by **expected cost** under an explicit cost matrix, never raw accuracy. *(Already past accuracy — the MVP eval reports recall-on-dangerous + precision.)*
 - **The aggressiveness dial → risk–coverage curve.** Give the guard a risk score, then sweep the auto-allow-vs-escalate threshold. Plot **missed-danger rate vs false-alarm rate** (safety/utility tradeoff) and **coverage vs error-on-covered** (selective classification; AURC as one number). *"Pick your risk tolerance with data, not vibes."* Prerequisite: make the guard **parametric** (a risk score to threshold) — done in this stage.
 - **Neyman–Pearson operating point** — how a real safety gate is specified: *"at a guaranteed ≤X% dangerous-miss rate, the false-positive rate is Y%."*
@@ -58,14 +58,14 @@ A real worker LLM proposes tool calls; a real guardian (deterministic rules → 
 - **Hardening, measured before/after:** untrusted content quarantined from the guardian's instruction channel; path/command canonicalization; the guardian judges *structured action facts*, never raw attacker prose. A **retrieval/similarity layer** (vector store of known signatures + past blocks) is a deferred graduated tier between rules and judge — and the guard's *memory* for the Stage-3 self-improving loop.
 
 **Tier 4 — frontier**
-- **★ The research thesis — "Oversight Has a Capacity" (applied/measurement, NOT novel theory; see [`docs/RESEARCH.md`](docs/RESEARCH.md)).** The human reviewer is **endogenous**: escalation fatigues them, so deferral must be **load-aware**; realized safety is an inverted-U (optimum below capacity), and fatigue is an **attack surface**. **Verified: all prior art** — fatigue-aware deferral is [FALCON](https://arxiv.org/html/2604.00904)/[DeCCaF](https://arxiv.org/abs/2403.06906); the flooding attack is SOC alert-fatigue. Our contribution is the **open-source system + the measurement** that brings these together for LLM agents (the inverted-U + flooding demos are *built*: `eval/inverted_u.py`, `eval/fatigue_attack.py`). Present as a systems/measurement writeup, never a discovery.
+- **★ The research thesis — "Oversight Has a Capacity" (applied/measurement, NOT novel theory; see [`docs/RESEARCH.md`](docs/RESEARCH.md)).** The human reviewer is **endogenous**: escalation fatigues them, so deferral must be **load-aware**; realized safety is an inverted-U (optimum below capacity), and fatigue is an **attack surface**. **Verified: all prior art** — fatigue-aware deferral is [FALCON](https://arxiv.org/html/2604.00904)/[DeCCaF](https://arxiv.org/abs/2403.06906); the flooding attack is SOC alert-fatigue. Our contribution is the **open-source system + the measurement** that brings these together for LLM agents (the inverted-U + flooding demos are *built*: `eval/inverted_u.py`, `eval/fatigue_attack.py`). This is a systems/measurement contribution, not a theoretical discovery.
 - **Trajectory-level guarding — PRIOR ART we *implement*, not claim** ([Trajectory Guard](https://arxiv.org/pdf/2601.00516), [ShieldAgent](https://arxiv.org/pdf/2503.22738), AgentAuditor): a single action is safe but the *sequence* is lethal (read secret → write public file → push). It's a **detection** layer on the orthogonal "what we inspect" axis — the load-aware oversight layer *consumes* it; the two compose, neither builds on the other.
 - **Conformal prediction** — distribution-free abstain-or-act guarantees (easy to misapply; implement only when going deep).
 - **Calibration metrics** (ECE / Brier / reliability), an **active-learning** label loop, **mutation testing** for policy robustness.
 
 Cost is kept low by design — see [`docs/EVAL.md`](docs/EVAL.md) (caching · Message Batches · pre-recorded traces · stratified samples · free `count_tokens` pre-flight; observed via the built-in `judge_cost` meter).
 
-**Why it matters:** this is the question LangGraph refuses to answer — *"is my policy any good?"* Measuring precision/recall on a fuzzy, human-judgment task under asymmetric cost is a real ML/safety question almost nobody publishes a measured answer to. It's the senior, ownable, research-flavored wedge — and it's honest.
+**Why it matters:** this is the question LangGraph refuses to answer — *"is my policy any good?"* Measuring precision/recall on a fuzzy, human-judgment task under asymmetric cost is a real ML/safety question almost nobody publishes a measured answer to.
 **Honest limit:** a small hand-labeled set with a *measured* noise floor, reported as such; published benchmarks add weight, the curated corpus is hand-built — never overclaimed. The thesis raises the bar: claiming "calibrated judgment is the product" obliges the curve to exist.
 
 ---
@@ -118,7 +118,7 @@ gate*, never something imposed on an unwilling system.
 **Why it's nearly free:** the MVP's `interrupt()` + pending-queue + approve/reject-by-`thread_id` + TTL is *already* an asynchronous, out-of-band approval backbone. This is just **another client on the existing approve/reject API + an outbound notification** — not a re-architecture.
 
 **Why it matters:** it removes the #1 real-world friction of human-in-the-loop — the agent can pause for you while you're anywhere.
-**Honest limit:** integration/UX depth, not algorithmic depth — the harder problem stays Stage 1. A reach layer: done after, never instead.
+**Honest limit:** integration/UX depth, not algorithmic depth — the harder problem stays Stage 1. A reach layer that complements Stage 1 rather than substituting for it.
 
 ---
 
@@ -166,4 +166,4 @@ Hosted, multi-tenant, per-team policy and SSO; an audit/compliance surface; noti
 
 ---
 
-**Related:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/DECISIONS.md`](docs/DECISIONS.md)
+**Related:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)

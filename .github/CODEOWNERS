@@ -1,7 +1,7 @@
-# CODEOWNERS for engineering-kit-emre
+# CODEOWNERS for AgentGuard
 # https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
 #
-# Every file in this repo is owned by @lycrongenesis.
+# Every file in this repo is owned by @turangenesis.
 # When a teammate is added, replace or supplement the entries below.
 
-* @lycrongenesis
+* @turangenesis

@@ -38,15 +38,15 @@ endogenous expert.*** The last clause is the new part.
 
 ## What is NOT novel (verified — it's all prior art)
 
-We checked, three times. Every candidate "seam" is published. State this plainly and present the
-work as **applied / measurement / systems**, never as a discovery:
+Every candidate "seam" is published prior art. The work is presented as **applied / measurement /
+systems**, not as a discovery; the contribution is operationalizing and measuring these established
+mechanisms in the LLM-agent setting:
 
 - **Endogenous / fatiguing reviewer + load-aware deferral + the inverted-U — PRIOR ART.**
   [FALCON — Fatigue-Aware Learning to Defer](https://arxiv.org/html/2604.00904) ("existing L2D
   methods assume static human performance… FALCON models workload-varying performance with
   psychologically-grounded fatigue curves") and
   [DeCCaF — cost-sensitive deferral under workload constraints](https://arxiv.org/abs/2403.06906).
-  *This is the exact idea we thought might be ours. It isn't.*
 - **Fatigue-as-attack (flood the reviewer to bury a malicious action) — PRIOR ART.** SOC
   alert-flooding / analyst-fatigue (ACM Computing Surveys 2025) and approval fatigue named as an
   AI-agent exploitation vector ("agent traps").
@@ -59,8 +59,8 @@ work as **applied / measurement / systems**, never as a discovery:
 **Our actual contribution = artifacts + measurement, not theory:** an open-source agent firewall
 (+ live demo) that operationalizes these ideas together in the LLM-agent setting, a calibration +
 noise-floor measurement apparatus, and honest demonstrations (inverted-U, flooding attack,
-model-dependence, reproducibility) on real scored data. Strong portfolio + workshop/technical-report
-grade — **not** a novel-theory conference paper.
+model-dependence, reproducibility) on real scored data. This is an applied / measurement systems
+contribution, **not** a novel-theory result.
 
 ---
 
@@ -126,23 +126,14 @@ demonstrates the *instrument*, not a result.
 **"Attention-aware escalation":** a guard that learns where human review measurably adds value
 and **stops escalating where it doesn't**, preserving the reviewer's scarce attention for the
 cases that matter — curing alarm fatigue *with data* rather than vibes. Consent-based and
-revocable.
-
-> The provocative "agent overrides human cognition / Neuralink" framing stays a **vision
-> footnote**, never the core — and is reframed responsibly as **consented, revocable,
-> category-scoped delegation of authority** (the human *chooses*, with data, and can revoke),
-> not "the agent overrides your brain." The latter framing is both ethically fraught and a
-> credibility risk in a serious venue.
+revocable: a **consented, revocable, category-scoped delegation of authority** (the human
+*chooses*, with data, and can revoke).
 
 ---
 
-## Honest discipline (so we don't repeat the over-claim)
+## Methodological commitments
 
-- **Novel paradigms are rare; you do not need one.** A strong contribution is *rigorous
-  execution + one genuine seam*, not a revolution. We have both — the calibration-under-
-  asymmetric-cost framework (built) + the load-aware / endogenous-expert seam.
 - Every claim ships with **prior-art citations** and either a **measured number** or an explicit
   **"future work."**
 - The current dataset is **small (125 hand-labeled rows, hardened) and honestly labeled as such**; current results are
   *method demonstrations* until the dataset is scaled and hardened.
-- Stop digging for a bigger earthquake. **Land this one.**

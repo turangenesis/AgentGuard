@@ -1,6 +1,6 @@
 """The LangGraph runtime: worker -> guardian -> (execute | interrupt | deny) -> loop.
 
-This is the heart of AgentGuard and the whole CV claim. A real worker LLM proposes
+This is the heart of AgentGuard. A real worker LLM proposes
 one tool call at a time; the guardian classifies it; SAFE executes, BLOCKED is denied,
 and APPROVAL_REQUIRED hits an ``interrupt()`` node that pauses the graph and checkpoints
 state to SQLite. A later ``Command(resume=...)`` (from the API, by ``thread_id``)
