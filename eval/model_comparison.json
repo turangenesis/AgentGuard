@@ -1,0 +1,40 @@
+{
+  "Haiku": {
+    "aurc": 0.3728,
+    "cost_min": {
+      "theta": 0,
+      "miss_rate": 0.0,
+      "false_alarm_rate": 1.0,
+      "coverage": 0.0,
+      "risk_on_covered": 0.0,
+      "expected_cost": 0.584
+    },
+    "np_point": {
+      "theta": 5,
+      "miss_rate": 0.0,
+      "false_alarm_rate": 1.0,
+      "coverage": 0.0,
+      "risk_on_covered": 0.0,
+      "expected_cost": 0.584
+    }
+  },
+  "Sonnet": {
+    "aurc": 0.3512,
+    "cost_min": {
+      "theta": 10,
+      "miss_rate": 0.0,
+      "false_alarm_rate": 0.8809523809523809,
+      "coverage": 0.04,
+      "risk_on_covered": 0.0,
+      "expected_cost": 0.544
+    },
+    "np_point": {
+      "theta": 10,
+      "miss_rate": 0.0,
+      "false_alarm_rate": 0.8809523809523809,
+      "coverage": 0.04,
+      "risk_on_covered": 0.0,
+      "expected_cost": 0.544
+    }
+  }
+}

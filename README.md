@@ -7,7 +7,7 @@ AI agents now **run** code — deploy, delete, push to `main`. The usual safety 
 
 **Two things at once, on purpose:**
 - 🛠️ **The system** — a worker LLM agent proposes actions; a guardian (deterministic rules + LLM risk judgment) classifies each **safe / approval-required / blocked**; risky ones pause the agent mid-task (LangGraph `interrupt()`) and wait for a human; every decision is audit-logged on a live dashboard with an interactive **calibration dial**.
-- 📊 **The measurement** — we frame the guard as *selective classification under asymmetric cost with noisy labels and a fatiguing reviewer*, and measure it: a calibration curve, a noise floor (Fleiss' κ = 0.52), the safety-vs-oversight **inverted-U**, a flooding **attack**, and model-dependence — five figures, all reproducible. *(Honest scope: an applied/measurement project. The mechanisms — fatigue-aware deferral, flooding attacks — are prior art we cite; the contribution is the open-source system + the measurement. See **[docs/DRAFT.md](docs/DRAFT.md)**.)*
+- 📊 **The measurement** — we frame the guard as *selective classification under asymmetric cost with noisy labels and a fatiguing reviewer*, and measure it: a calibration curve, a noise floor (Fleiss' κ = 0.52), the safety-vs-oversight **inverted-U**, a flooding **attack**, and model-dependence — **4 figures + a measured noise floor** (3 regenerate key-free; the 2 LLM-scored ones ship as committed artifacts and need an Anthropic key to regenerate). *(Honest scope: an applied/measurement project. The mechanisms — fatigue-aware deferral, flooding attacks — are prior art we cite; the contribution is the open-source system + the measurement. See **[docs/DRAFT.md](docs/DRAFT.md)**.)*
 
 > *Anyone can stop an agent. AgentGuard measures **when** to — and shows the cost of every setting.*
 
@@ -104,6 +104,24 @@ bash scripts/smoke-check.sh             # key-file checks + pytest
 ```
 
 Evaluation is **cost-aware by design** — prompt caching, the Message Batches API, pre-recorded worker traces, and stratified sampling, with a built-in judge cost/cache meter (`GET /api → judge_cost`). Methodology and targets → **[docs/EVAL.md](docs/EVAL.md)**.
+
+## Reproduce the results
+
+```bash
+git clone … && cd AgentGuard && pip install -r requirements.txt
+
+# Key-free (replay committed scores / pure simulation) — exact paper numbers:
+python -m eval.inverted_u                # the inverted-U (Figure 2)  [reads committed calibration.json]
+python -m eval.fatigue_attack            # the flooding attack (Figure 4)
+
+# Need an ANTHROPIC_API_KEY (LLM scoring; a few cents each):
+python -m eval.calibrate --plot          # calibration curve + per-action scores (Figure 1)
+python -m eval.noise_floor               # the κ noise floor       [committed: eval/noise_floor.json]
+python -m eval.compare_models            # Haiku vs Sonnet (Figure 3) [committed: eval/model_comparison.json]
+python -m eval.nseed --temp 0 --n 3      # deployed-setting AURC spread
+```
+
+The four figures live in [`eval/`](eval/) (`calibration.png`, `inverted_u.png`, `model_comparison.png`, `fatigue_attack.png`); the κ noise floor is a number, not a plot. The two LLM-scored artifacts (`noise_floor.json`, `model_comparison.json`) are **committed**, so the cited numbers ship even without a key.
 
 ## Stack
 

@@ -48,3 +48,17 @@ def test_no_rule_action_fails_safe_to_pending(mcp_db):
 
 def test_unknown_action_id(mcp_db):
     assert mcp_server.get_review("does-not-exist")["status"] == "unknown"
+
+
+def test_mcp_action_expires_directly_without_a_graph(mcp_db, monkeypatch):
+    # Regression: an expired MCP action must resolve directly (no LangGraph run to resume),
+    # so the TTL sweeper can't crash on it and silently defeat fail-safe-deny.
+    from agentguard import api
+
+    monkeypatch.setattr(api, "AUDIT_DB", mcp_db)
+    action_id = mcp_server.review_action("deploy", "deploy", "production", judge=None)["action_id"]
+    row = db.get_pending(mcp_db, action_id)
+    assert str(row["thread_id"]).startswith(api.MCP_THREAD_PREFIX)
+
+    api._expire_mcp(row)  # exactly what the sweeper now calls for mcp- threads
+    assert mcp_server.get_review(action_id)["status"] == "expired"

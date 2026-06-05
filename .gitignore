@@ -48,11 +48,9 @@ out/
 *.sqlite
 *.sqlite3
 
-# Generated eval artifacts (calibration.png + calibration.json are committed so the
-# README curve renders and the dashboard calibration dial works out-of-the-box)
-eval/noise_floor.json
+# Generated eval artifacts. The PNGs, calibration.json, noise_floor.json and
+# model_comparison.json are COMMITTED so the cited numbers (κ, per-model AURCs) and the
+# dashboard dial ship without an API key. The rest regenerate key-free or near-free.
 eval/inverted_u.json
-eval/model_comparison.json
-
 eval/fatigue_attack.json
 eval/nseed.json

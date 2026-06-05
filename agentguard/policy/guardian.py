@@ -44,12 +44,13 @@ _COST = {
 def cost_stats() -> dict:
     """Snapshot of cumulative judge token usage + the prompt-cache hit rate.
 
-    cache_hit_rate is cache_read / (all input tokens). It stays 0.0 if caching never
-    engages — e.g. the stable prefix is below the model's minimum cacheable length —
-    which is exactly the thing we want to *measure* rather than claim.
+    cache_hit_rate is cache_read / total input tokens. langchain-anthropic reports
+    ``input_tokens`` as the GRAND TOTAL of all input types, with cache_read / cache_creation
+    as subsets of it — so the denominator is ``input_tokens`` alone (adding the cache counts
+    again would double-count). Stays 0.0 if caching never engages.
     """
     stats = dict(_COST)
-    total_in = stats["input_tokens"] + stats["cache_read_tokens"] + stats["cache_creation_tokens"]
+    total_in = stats["input_tokens"]  # already includes cache_read + cache_creation
     stats["cache_hit_rate"] = round(stats["cache_read_tokens"] / total_in, 3) if total_in else 0.0
     return stats
 

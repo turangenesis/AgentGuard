@@ -109,8 +109,25 @@ def _resume_run(thread_id: str, payload: dict) -> None:
         conn.close()
 
 
+def _expire_mcp(row: dict) -> None:
+    """Expire an externally-submitted (MCP) pending action directly — no graph to resume."""
+    db.resolve_pending(AUDIT_DB, row["action_id"], "EXPIRED")
+    db.append_audit(
+        AUDIT_DB,
+        event="EXPIRED",
+        thread_id=row["thread_id"],
+        action_id=row["action_id"],
+        kind=row["kind"],
+        target=row["target"],
+        verdict="APPROVAL_REQUIRED",
+        reason=row["reason"],
+        detail="EXPIRED via TTL sweeper (MCP action)",
+    )
+
+
 async def _ttl_sweeper() -> None:
-    """Expire pending actions past their TTL by resuming their graph as a denial."""
+    """Expire pending actions past their TTL (fail-safe = deny). Resilient to per-row errors so
+    one bad row (e.g. an MCP action with no graph to resume) can never kill the loop."""
     while True:
         await asyncio.sleep(SWEEP_INTERVAL_S)
         try:
@@ -118,8 +135,14 @@ async def _ttl_sweeper() -> None:
         except Exception:
             continue
         for row in stale:
-            payload = {"approved": False, "status": "EXPIRED"}
-            await asyncio.to_thread(_resume_run, row["thread_id"], payload)
+            try:
+                if str(row["thread_id"]).startswith(MCP_THREAD_PREFIX):
+                    await asyncio.to_thread(_expire_mcp, row)
+                else:
+                    payload = {"approved": False, "status": "EXPIRED"}
+                    await asyncio.to_thread(_resume_run, row["thread_id"], payload)
+            except Exception:
+                continue  # never let one row kill the sweeper — fail-safe-deny must keep running
 
 
 @asynccontextmanager

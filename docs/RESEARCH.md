@@ -71,7 +71,7 @@ The paper stays clear only if these are not conflated:
 | Axis | Question | Status |
 |---|---|---|
 | **Detection granularity** | *What* do we inspect — a single action or the whole trajectory? | **Prior art** (trajectory guarding). We implement/consume it. |
-| **Oversight calibration** | *When/whether* to escalate, and *who* is reliable, given a subjective label and a fatiguing human | **The novel contribution.** |
+| **Oversight calibration** | *When/whether* to escalate, and *who* is reliable, given a subjective label and a fatiguing human | **Our focus — the system + measurement (mechanism is prior art: FALCON/DeCCaF).** |
 
 They **compose**: the load-aware oversight layer sits on top of *any* detection layer. The
 fatigue thesis does **not** "build on" trajectory guarding — it is a different axis that

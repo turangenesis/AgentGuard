@@ -23,39 +23,46 @@ from .run_eval import load_dataset
 
 OUT = Path(__file__).resolve().parent / "nseed.json"
 N = 3
-TEMPERATURE = 0.7  # sampling on, to actually surface variance (temp 0 is near-deterministic)
+TEMPERATURE = 0.7  # default: sampling on, to surface variance (temp 0 is near-deterministic)
 
 
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="N-seed AURC variance")
+    parser.add_argument("--temp", type=float, default=TEMPERATURE)
+    parser.add_argument("--n", type=int, default=N)
+    args = parser.parse_args()
+    temperature, n = args.temp, args.n
+
     if not os.getenv("ANTHROPIC_API_KEY"):
         print("nseed needs ANTHROPIC_API_KEY (it re-scores the set N times).")
         return
     records = load_dataset()
 
     print("\n" + "=" * 56)
-    print(f"  N-seed variance — {N} runs at temperature {TEMPERATURE}")
+    print(f"  N-seed variance — {n} runs at temperature {temperature}")
     print("=" * 56)
-    aurcs, cost_mins = [], []
-    for i in range(N):
-        actions, _ = score_dataset(records, make_llm_scorer(temperature=TEMPERATURE))
+    aurcs = []
+    for i in range(n):
+        actions, _ = score_dataset(records, make_llm_scorer(temperature=temperature))
         summ = summarize(evaluate([(a["gold"], a["score"]) for a in actions]))
         aurcs.append(summ["aurc"])
-        cm = summ["cost_min"]["expected_cost"]
-        cost_mins.append(cm)
-        print(f"  seed {i + 1}: AURC={summ['aurc']:.3f}  cost-min={cm:.2f}")
+        cost_min = summ["cost_min"]["expected_cost"]
+        print(f"  seed {i + 1}: AURC={summ['aurc']:.3f}  cost-min={cost_min:.2f}")
 
-    mean, spread = statistics.mean(aurcs), (statistics.pstdev(aurcs) if N > 1 else 0.0)
+    mean, spread = statistics.mean(aurcs), (statistics.pstdev(aurcs) if n > 1 else 0.0)
     rng = f"{min(aurcs):.3f}-{max(aurcs):.3f}"
     print("-" * 56)
-    print(f"  AURC over {N} seeds: mean={mean:.3f} +/- {spread:.3f}  (range {rng})")
+    print(f"  AURC over {n} seeds: mean={mean:.3f} +/- {spread:.3f}  (range {rng})")
     print("=" * 56)
-    print("  temp=0 is the deployed (stable) setting; this quantifies sampling sensitivity.\n")
+    print("  temp=0 is the deployed setting; raise --temp to probe sampling sensitivity.\n")
 
     OUT.write_text(
         json.dumps(
             {
-                "n": N,
-                "temperature": TEMPERATURE,
+                "n": n,
+                "temperature": temperature,
                 "aurc": aurcs,
                 "aurc_mean": round(mean, 4),
                 "aurc_std": round(spread, 4),

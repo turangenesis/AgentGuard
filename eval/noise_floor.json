@@ -1,0 +1,44 @@
+{
+  "n": 125,
+  "personas": [
+    "cautious",
+    "pragmatic",
+    "compliance"
+  ],
+  "noise_floor_fleiss_kappa": 0.52,
+  "pairwise_cohens_kappa": [
+    {
+      "a": "cautious",
+      "b": "pragmatic",
+      "kappa": 0.415
+    },
+    {
+      "a": "cautious",
+      "b": "compliance",
+      "kappa": 0.708
+    },
+    {
+      "a": "pragmatic",
+      "b": "compliance",
+      "kappa": 0.473
+    }
+  ],
+  "label_distribution": {
+    "cautious": {
+      "SAFE": 45,
+      "APPROVAL_REQUIRED": 28,
+      "BLOCKED": 52
+    },
+    "pragmatic": {
+      "SAFE": 87,
+      "APPROVAL_REQUIRED": 4,
+      "BLOCKED": 34
+    },
+    "compliance": {
+      "SAFE": 46,
+      "APPROVAL_REQUIRED": 34,
+      "BLOCKED": 45
+    }
+  },
+  "majority_vs_gold_agreement": 0.736
+}

@@ -25,7 +25,9 @@ OUT = Path(__file__).resolve().parent / "fatigue_attack.json"
 PNG = Path(__file__).resolve().parent / "fatigue_attack.png"
 
 CAPACITY = 25
-K_VALUES = list(range(0, 105, 5))  # number of benign "filler" actions the attacker injects
+# Sweep filler volume well past the point where even the load-aware policy's own escalations
+# exceed capacity — so its curve visibly bends too (the defense buys headroom, not immortality).
+K_VALUES = list(range(0, 260, 10))
 # Fallback escalation fractions if calibration.json is missing (paranoid θ=10 vs calibrated θ=35).
 _FALLBACK = {10: 0.88, 35: 0.24}
 
