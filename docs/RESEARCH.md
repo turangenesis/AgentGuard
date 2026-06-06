@@ -34,6 +34,11 @@ stamping) both reduce safety.
 One-line framing: **selective classification under asymmetric cost with noisy labels *and an
 endogenous expert.*** The last clause is the new part.
 
+Read another way, the endogenous expert makes agent oversight a **resource-allocation** problem,
+not only a classification one: human review attention is a *finite budget*, and the guard's
+escalation policy decides how it is spent — every routine escalation draws down the same pool the
+*dangerous* action will need.
+
 ---
 
 ## What is NOT novel (verified — it's all prior art)
