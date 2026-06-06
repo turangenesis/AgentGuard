@@ -45,7 +45,9 @@ hard inputs the guard cannot safely auto-decide; and (iii) when the reviewer is 
 \textbf{inverted-U} in the escalation rate: \emph{more human oversight can make a system less safe},
 and the safety-optimal guard escalates \textbf{below full escalation} (a middle escalation rate, not
 the maximum), a setting a load-aware policy also uses to resist a \emph{flooding attack} that
-rubber-stamps a malicious action past a fatigued reviewer. \textbf{We claim none of these mechanisms
+rubber-stamps a malicious action past a fatigued reviewer. Framed this way, agent oversight is not
+only a classification problem (which action is risky?) but a resource-allocation one: human attention
+is finite, and the guard's escalation policy spends it. \textbf{We claim none of these mechanisms
 as novel:} fatigue-aware learning-to-defer (FALCON~\cite{falcon}, DeCCaF~\cite{deccaf}),
 trajectory-level guarding, and fatigue/flooding attacks on human reviewers (security-operations alert
 fatigue~\cite{tariq25}) are all prior art we cite. Our contribution is an \textbf{open-source
@@ -55,6 +57,23 @@ inverted-U and the flooding attack are modeling results that motivate a human st
 \end{abstract}
 
 \section{Introduction}
+
+Consider two guards for the same coding agent. Guard A escalates five actions a day to its human
+reviewer; Guard B escalates five hundred. Asked which is safer, most people answer Guard B --- more
+eyes on more actions, fewer dangerous calls slipping through unchecked. That answer treats the
+reviewer as a fixed, reliable oracle: each escalation an independent check that can only help.
+
+But the reviewer is not fixed. By the three-hundredth approval of a routine, benign action, a human is
+fatigued and primed to keep clicking \emph{Approve} --- so a malicious action buried deep in Guard B's
+stream is rubber-stamped, while Guard A's reviewer, asked only five times, reads each request
+carefully. Guard B has more oversight and the worse outcome. Its escalations on routine actions were
+not free: they were drawn from the same finite pool of attention the dangerous action needed.
+
+That gap is what this paper is about. The existence of fatigue is obvious; its consequence --- that a
+more-escalating oversight policy can be the \emph{less} safe one, and that the safety-optimal
+escalation rate sits below ``escalate everything'' --- is not. We measure and model that tradeoff
+rather than assume it. Agent oversight, framed this way, is not only a classification problem (which
+action is risky?) but a resource-allocation one (how should a finite human-attention budget be spent?).
 
 AI coding agents are moving from \emph{suggesting} code to \emph{executing} it. Once an agent can
 \texttt{deploy}, \texttt{rm -rf}, push to \texttt{main}, or read a secret, a single bad instruction
@@ -450,7 +469,9 @@ automating them away.
 \section{Conclusion}
 
 Stopping an agent is a framework feature. Knowing \emph{when} to stop it --- and accounting for the
-fact that asking depletes the human you are asking --- is the problem. Treating the guard as selective
+fact that asking depletes the human you are asking --- is the problem. A guard that escalates more is
+not automatically safer: past the reviewer's capacity, the extra escalations spend the very attention
+the dangerous action will need. Treating the guard as selective
 classification under asymmetric cost makes its judgment measurable; measuring reviewer agreement shows
 there is no single ground truth; and modeling the reviewer as endogenous shows that oversight has a
 capacity, beyond which more of it makes a system less safe. None of these mechanisms is ours to claim

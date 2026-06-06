@@ -3,6 +3,26 @@
 ### A human-in-the-loop firewall for AI coding agents — and a measurement study of *when* to trust the human.
 *OpenClaw gives agents hands. AgentGuard gives them brakes.*
 
+**A thought experiment, before the architecture.**
+
+Two guards watch the same agent.
+
+- **Guard A** escalates **5 actions/day** to a human reviewer.
+- **Guard B** escalates **500/day.**
+
+Most people pick **B** — more oversight, more safety. Here's the break:
+
+|  | Guard A (5/day) | Guard B (500/day) |
+|---|---|---|
+| Reviewer by approval #300 | reads all 5 carefully | fatigued, rubber-stamping |
+| Malicious action buried in the stream | gets caught | sails through on a tired *yes* |
+
+Guard B has more oversight and the worse outcome.
+
+The reframe: escalations aren't free. Each one spends a finite pool of human attention — the same pool the *dangerous* action needs. So oversight isn't only a **classification** problem (which action is risky?); it's a **resource-allocation** problem (the escalation policy spends a budget the threat is competing for).
+
+> *This is the lens, not a discovery: the fatiguing-reviewer model is prior art (FALCON, DeCCaF). What this repo does is bring it to LLM-agent guards and put a curve on it.*
+
 AI agents now **run** code — deploy, delete, push to `main`. The usual safety answer is a human-approval gate. But a pause button is the easy part; the hard part is the **judgment** (which actions to stop) and the fact that the **human reviewer is subjective and gets tired**. AgentGuard is both a working gate *and* the apparatus that **measures** that judgment instead of guessing at it.
 
 **Two things at once, on purpose:**
