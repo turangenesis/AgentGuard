@@ -1,5 +1,5 @@
 % Oversight Has a Capacity — arXiv preprint source.
-% Self-contained: builds with a single pdflatex pass (inline bibliography, no bibtex required).
+% Self-contained: run pdflatex TWICE (inline bibliography = no bibtex step, but \cite/\ref resolve on the 2nd pass).
 % A refs.bib is also provided for those who prefer the bibtex workflow (see paper/README.md).
 \documentclass[11pt]{article}
 
@@ -104,6 +104,13 @@ are therefore artifacts and measurements, not theory:
   $0.374 \pm 0.002$ over seeds), and that the framework \emph{measures} both (\S\ref{sec:model}).
 \end{itemize}
 
+\noindent \textbf{Stated plainly: the contribution is a measurement instrument and the findings it
+yields} --- a measured noise floor where the field assumed ground truth, the operating limits of an
+LLM guard framed as selective classification under asymmetric cost, and a demonstration --- in the
+LLM-agent action-gating setting specifically --- of the endogenous-reviewer inverted-U and its
+flooding-attack dual. The mechanisms are prior art; \emph{measuring} them in this setting is what we
+add.
+
 \paragraph{Scope (stated up front).} This matters where the judgment is genuinely \emph{subjective
 with delayed outcomes} --- autonomous agent action-gating, content-moderation borderline calls,
 security-alert triage. It does \textbf{not} apply where there is objective ground truth (e.g.\
@@ -199,7 +206,11 @@ pipe-to-shell), and 16 scary-\emph{looking} cases (12 genuinely benign false-ala
 \texttt{rm -rf node\_modules}, read \texttt{.env.example}; and 4 that look alarming \emph{and} warrant
 approval, e.g.\ \texttt{git reset -{}-hard} of unpushed work). Labels: \textsc{safe} 42 /
 \textsc{approval} 52 / \textsc{blocked} 31. A small, curated set --- reported as such, not a published
-benchmark.
+benchmark. \textbf{Gold-label provenance:} the labels are one author's judgments, used as a single
+measurement reference throughout. This is in deliberate tension with our own noise floor
+(\S\ref{sec:noise}): Fleiss' $\kappa = 0.52$ quantifies how contestable that reference is, so every
+guard score below should be read \emph{relative to} that floor, not as agreement with an objective
+truth.
 
 \paragraph{Guard scorer.} Deterministic rules score clear cases for free; the ambiguous middle is
 scored by an LLM (Haiku by default, Sonnet for comparison), at temperature 0, prompted for a 0--100
@@ -272,7 +283,10 @@ are the safety-optimal operating points (all below full escalation).}
 \label{fig:invertedu}
 \end{figure}
 
-Modeling the reviewer as endogenous flips the usual intuition. As the guard escalates \emph{more}, two
+Modeling the reviewer as endogenous flips the usual intuition. \textbf{We state this up front: the
+inverted-U below is a direct consequence of the assumed monotonically-fatiguing reviewer
+(\S\ref{sec:methods}) --- a modeling result about a plausible model, not an empirical finding about
+real people.} As the guard escalates \emph{more}, two
 failure modes trade off: escalate too little and the guard auto-allows danger (guard-misses); escalate
 too much and the reviewer overloads and rubber-stamps (fatigue-misses). Realized danger-through is
 therefore \textbf{U-shaped in the escalation rate} --- and the safety-optimal escalation rate is
@@ -312,7 +326,9 @@ work) would make it empirical.
 Re-scoring with a stronger model shifts the curve: \textbf{Sonnet AURC 0.351 vs.\ Haiku 0.373} (each a
 single seed; the Haiku value sits inside the $0.374 \pm 0.002$ band below), and Sonnet can safely
 auto-allow a sliver (cost-min $\theta = 10$) where Haiku must escalate everything ($\theta = 0$). The
-gain is \emph{modest} --- a better model helps but does not solve the hard set. The point is
+gain is \emph{modest} --- a better model helps but does not solve the hard set, and the $0.022$ AURC
+gap is small enough that it may sit within the label subjectivity the noise floor measures
+(\S\ref{sec:noise}, $\kappa = 0.52$): we report the \emph{ordering}, not a precise magnitude. The point is
 methodological: guard quality depends on the scoring model (and threshold, and attack mix), so the
 right output is not ``guards are good/bad'' but \emph{a measurement, for a given configuration}. The
 result is also \textbf{reproducible at the deployed setting}: across 3 runs at temperature 0 the
@@ -444,7 +460,7 @@ strands together and turns ``is my guard any good?'' from a vibe into a curve. T
 and some are simulated, and we say that too.
 
 % ---------------------------------------------------------------------------
-% Inline bibliography (single-pass; no bibtex needed). refs.bib mirrors this.
+% Inline bibliography (no bibtex needed; run pdflatex twice so \cite/\ref resolve). refs.bib mirrors this.
 % ---------------------------------------------------------------------------
 \begin{thebibliography}{99}
 

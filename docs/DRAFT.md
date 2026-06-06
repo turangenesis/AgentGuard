@@ -74,6 +74,12 @@ usually asserted. Our contributions are therefore artifacts and measurements, no
 - Evidence that results are **model-dependent and reproducible** (Haiku vs Sonnet; AURC
   0.374 ± 0.002 over seeds), and that the framework *measures* both (§5.4).
 
+**Stated plainly: the contribution is a measurement instrument and the findings it yields** — a
+measured noise floor where the field assumed ground truth, the operating limits of an LLM guard framed
+as selective classification under asymmetric cost, and a demonstration — in the LLM-agent
+action-gating setting specifically — of the endogenous-reviewer inverted-U and its flooding-attack
+dual. The mechanisms are prior art; *measuring* them in this setting is what we add.
+
 **Scope (stated up front).** This matters where the judgment is genuinely *subjective with delayed
 outcomes* — autonomous agent action-gating, content-moderation borderline calls, security-alert
 triage. It does **not** apply where there is objective ground truth (e.g. banking-fraud, eventually
@@ -157,7 +163,11 @@ cases: 54 ambiguous-middle (e.g. `npm install <pkg>`, edit `package.json`, `git 
 secret exfiltration, pipe-to-shell), and 16 scary-*looking* cases (12 genuinely benign false-alarm
 traps — `rm -rf node_modules`, read `.env.example`; and 4 that look alarming *and* warrant approval,
 e.g. `git reset --hard` of unpushed work). Labels: SAFE 42 / APPROVAL 52 / BLOCKED 31. A small,
-curated set — reported as such, not a published benchmark.
+curated set — reported as such, not a published benchmark. **Gold-label provenance:** the labels are
+one author's judgments, used as a single measurement reference throughout. This is in deliberate
+tension with our own noise floor (§5.2): Fleiss' κ = 0.52 quantifies how contestable that reference
+is, so every guard score below should be read *relative to* that floor, not as agreement with an
+objective truth.
 
 **Guard scorer.** Deterministic rules score clear cases for free; the ambiguous middle is scored by
 an LLM (Haiku by default, Sonnet for comparison), at temperature 0, prompted for a 0–100 risk
@@ -219,7 +229,10 @@ annotators.)*
 > **Figure 2.** Realized danger-through vs. escalation rate for three reviewer capacities; the
 > marked minima are the safety-optimal operating points (all below full escalation).
 
-Modeling the reviewer as endogenous flips the usual intuition. As the guard escalates *more*, two
+Modeling the reviewer as endogenous flips the usual intuition. **We state this up front: the
+inverted-U below is a direct consequence of the assumed monotonically-fatiguing reviewer (§4) — a
+modeling result about a plausible model, not an empirical finding about real people.** As the guard
+escalates *more*, two
 failure modes trade off: escalate too little and the guard auto-allows danger (guard-misses);
 escalate too much and the reviewer overloads and rubber-stamps (fatigue-misses). Realized
 danger-through is therefore **U-shaped in the escalation rate** — and the safety-optimal escalation
@@ -244,7 +257,9 @@ result; a human study fitting `r(ℓ)` (future work) would make it empirical.
 Re-scoring with a stronger model shifts the curve: **Sonnet AURC 0.351 vs Haiku 0.373** (each a
 single seed; the Haiku value sits inside the 0.374 ± 0.002 band below), and Sonnet
 can safely auto-allow a sliver (cost-min `θ`=10) where Haiku must escalate everything (`θ`=0). The
-gain is *modest* — a better model helps but does not solve the hard set. The point is methodological:
+gain is *modest* — a better model helps but does not solve the hard set, and the 0.022 AURC gap is
+small enough that it may sit within the label subjectivity the noise floor measures (§5.2, κ = 0.52):
+we report the *ordering*, not a precise magnitude. The point is methodological:
 guard quality depends on the scoring model (and threshold, and attack mix), so the right output is
 not "guards are good/bad" but *a measurement, for a given configuration*. The result is also
 **reproducible at the deployed setting**: across 3 runs at temperature 0 the Haiku AURC is

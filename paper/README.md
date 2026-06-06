@@ -11,10 +11,13 @@ LaTeX source for the AgentGuard working paper. This folder is a **self-contained
 **Locally:**
 ```bash
 cd paper
-pdflatex main.tex      # single pass is enough — the bibliography is inline (no bibtex step)
+pdflatex main.tex      # run pdflatex TWICE — the 2nd pass resolves \cite + \ref
+pdflatex main.tex
 ```
 
-`main.tex` uses an inline `thebibliography`, so **one `pdflatex` pass** produces the PDF. A
+`main.tex` uses an inline `thebibliography`, so there is **no separate bibtex step** — but run
+`pdflatex` **twice**: the first pass writes the `.aux` (labels + citation keys), the second reads it
+back so `\cite` and `\ref` cross-references resolve (otherwise they render as `[?]` / `??`). A
 `refs.bib` is also provided if you prefer the bibtex/natbib workflow (keys match the `\bibitem`
 keys); switching is a small edit to the bibliography block at the bottom of `main.tex`.
 
