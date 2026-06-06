@@ -22,8 +22,8 @@
 
 \title{\textbf{Oversight Has a Capacity:\\ Calibrating Agent Guards to a Subjective, Fatiguing Human}}
 
-\author[1]{Emre Turan\thanks{Correspondence: \texttt{emreturan1269@gmail.com}. Code and data: \url{\coderepo}.}}
-\affil[1]{Independent Researcher}
+\author{Emre Turan\thanks{Correspondence: \texttt{emreturan1269@gmail.com}. Code and data: \url{\coderepo}.}}
+\affil{Independent Researcher}
 
 \date{\today}
 
@@ -31,8 +31,8 @@
 \maketitle
 
 \begin{abstract}
-As LLM agents begin to take real, irreversible actions --- running shell commands, editing files,
-deploying code --- the standard safety pattern is a human-in-the-loop approval gate: risky actions
+As LLM agents begin to take real, irreversible actions (running shell commands, editing files,
+deploying code), the standard safety pattern is a human-in-the-loop approval gate: risky actions
 pause and wait for a person. We argue the gate is the easy part. The hard, unsolved part is the
 \emph{judgment} --- deciding \textbf{which} actions to stop --- and the field evaluates that judgment
 against two assumptions that are both false: that there is a ground-truth notion of ``risky,'' and
@@ -41,16 +41,16 @@ that the human reviewer is a perfect, infinitely-available oracle. We show, on a
 risky (Fleiss' $\kappa = 0.52$), so there is no single correct label; (ii) framing the guard as
 \textbf{selective classification under asymmetric cost} makes its operating limits measurable, and on
 hard inputs the guard cannot safely auto-decide; and (iii) when the reviewer is modeled as
-\textbf{endogenous} --- fatiguing as escalation load grows --- realized safety becomes an
+\textbf{endogenous} (fatiguing as escalation load grows), realized safety becomes an
 \textbf{inverted-U} in the escalation rate: \emph{more human oversight can make a system less safe},
 and the safety-optimal guard escalates \textbf{below full escalation} (a middle escalation rate, not
-the maximum) --- a setting a load-aware policy also uses to resist a \emph{flooding attack} that
+the maximum), a setting a load-aware policy also uses to resist a \emph{flooding attack} that
 rubber-stamps a malicious action past a fatigued reviewer. \textbf{We claim none of these mechanisms
 as novel:} fatigue-aware learning-to-defer (FALCON~\cite{falcon}, DeCCaF~\cite{deccaf}),
 trajectory-level guarding, and fatigue/flooding attacks on human reviewers (security-operations alert
 fatigue~\cite{tariq25}) are all prior art we cite. Our contribution is an \textbf{open-source
 agent-oversight system} that operationalizes and \emph{measures} these ideas together in the
-LLM-agent action-gating setting --- turning ``is my guard good?'' from a guess into a curve. The
+LLM-agent action-gating setting, turning ``is my guard good?'' from a guess into a curve. The
 inverted-U and the flooding attack are modeling results that motivate a human study.
 \end{abstract}
 
@@ -64,22 +64,22 @@ pause the risky ones for a human to approve or reject.
 
 The gate is commodity. Frameworks hand you the pause primitive (e.g.\ LangGraph's
 \texttt{interrupt()}) for free. What no framework tells you is whether your approval \emph{policy} is
-any good --- whether it is too paranoid (so humans rubber-stamp every alert until the gate is
+any good: whether it is too paranoid (so humans rubber-stamp every alert until the gate is
 theater) or too lax (so something blows up). That decision is usually set by intuition.
 
 This paper treats the decision as a measurable problem, and in doing so surfaces a deeper one. The
 field implicitly assumes:
 \begin{enumerate}
-  \item \textbf{a ground-truth label} --- that ``is this action too risky to auto-run?'' has a
+  \item \textbf{a ground-truth label}: that ``is this action too risky to auto-run?'' has a
   correct answer;
-  \item \textbf{a perfect human} --- that the reviewer the gate escalates to is always available and
+  \item \textbf{a perfect human}: that the reviewer the gate escalates to is always available and
   always reliable.
 \end{enumerate}
 
 Both are false. ``Risky?'' is a subjective judgment that depends on context and risk tolerance, and
 human reviewers \emph{fatigue}: every escalation spends attention and nudges them toward
 rubber-stamping (a well-documented ``approval fatigue'' failure mode). Crucially, the reviewer is
-\textbf{endogenous} --- the guard's own escalation policy degrades the very oracle it escalates to.
+\textbf{endogenous}: the guard's own escalation policy degrades the very oracle it escalates to.
 
 \paragraph{What this paper is --- and is not.} It is \textbf{not} a novel-mechanism paper.
 Fatigue-aware deferral~\cite{falcon,deccaf}, trajectory-level guarding, selective classification, and
@@ -93,11 +93,11 @@ are therefore artifacts and measurements, not theory:
   Neyman--Pearson point, and AURC instead of accuracy (\S\ref{sec:methods},~\S\ref{sec:calib}), with
   a live, interactive demo.
   \item A \textbf{measured noise floor} for agent-action risk: on 125 hand-labeled actions, reviewer
-  agreement is only moderate (Fleiss' $\kappa = 0.52$) --- there is no single ground-truth safety
+  agreement is only moderate (Fleiss' $\kappa = 0.52$): there is no single ground-truth safety
   label (\S\ref{sec:noise}).
   \item A \textbf{demonstration, in the LLM-agent setting, of the endogenous-reviewer
   inverted-U}~\cite{falcon}: realized safety is maximized at an escalation rate \emph{below full
-  escalation}, and escalating everything is strictly worse (\S\ref{sec:invertedu}) --- and that the
+  escalation}, and escalating everything is strictly worse (\S\ref{sec:invertedu}); and that the
   \emph{same} load-aware setting resists a \textbf{flooding attack}~\cite{tariq25}
   (\S\ref{sec:attack}). These are \emph{modeling} results on real scored data, not human studies.
   \item Evidence that results are \textbf{model-dependent and reproducible} (Haiku vs.\ Sonnet; AURC
@@ -105,14 +105,14 @@ are therefore artifacts and measurements, not theory:
 \end{itemize}
 
 \noindent \textbf{Stated plainly: the contribution is a measurement instrument and the findings it
-yields} --- a measured noise floor where the field assumed ground truth, the operating limits of an
-LLM guard framed as selective classification under asymmetric cost, and a demonstration --- in the
-LLM-agent action-gating setting specifically --- of the endogenous-reviewer inverted-U and its
+yields}: a measured noise floor where the field assumed ground truth, the operating limits of an
+LLM guard framed as selective classification under asymmetric cost, and a demonstration (in the
+LLM-agent action-gating setting specifically) of the endogenous-reviewer inverted-U and its
 flooding-attack dual. The mechanisms are prior art; \emph{measuring} them in this setting is what we
 add.
 
 \paragraph{Scope (stated up front).} This matters where the judgment is genuinely \emph{subjective
-with delayed outcomes} --- autonomous agent action-gating, content-moderation borderline calls,
+with delayed outcomes}: autonomous agent action-gating, content-moderation borderline calls,
 security-alert triage. It does \textbf{not} apply where there is objective ground truth (e.g.\
 banking-fraud, eventually verifiable): there you simply measure both parties against the truth and
 use the better predictor. Naming the boundary is part of the claim.
@@ -124,14 +124,14 @@ action sequences}: Trajectory Guard~\cite{traj-guard} for real-time anomaly dete
 trajectories, ShieldAgent~\cite{shieldagent} for verifiable safety-policy reasoning over action
 trajectories, ToolSafe~\cite{toolsafe} for step-level tool-invocation guardrails, plus benchmarks
 such as AgentHarm~\cite{agentharm}. \textbf{We implement per-action gating and treat trajectory-level
-guarding as prior art}; our contribution is orthogonal --- the \emph{oversight-calibration} layer,
+guarding as prior art}; our contribution is orthogonal: the \emph{oversight-calibration} layer,
 which consumes whatever detection signal exists.
 
 \paragraph{Learning to defer, complementarity, and the fatiguing expert.} A mature line studies
 \emph{when} to defer to a human and how to \emph{complement} human weaknesses: learning to
 defer~\cite{madras18}, complement-humans~\cite{charusaie22}, learning when to require
 feedback~\cite{pugnana25}, complementary team performance~\cite{hemmer24}, appropriate
-reliance~\cite{schemmer23}. Most assume a \textbf{static} expert --- but two recent works already
+reliance~\cite{schemmer23}. Most assume a \textbf{static} expert, but two recent works already
 drop that assumption and model a \textbf{fatiguing/workload-varying} one: \textbf{FALCON}~\cite{falcon}
 (fatigue-aware learning-to-defer with psychologically-grounded fatigue curves) and
 \textbf{DeCCaF}~\cite{deccaf} (cost-sensitive deferral under workload constraints). \textbf{The
@@ -142,7 +142,7 @@ action-gating setting and measure it.
 selective classification~\cite{geifman17}; distribution-free guarantees from conformal
 prediction~\cite{angelopoulos21}; calibration is classically measured with ECE/Brier/reliability
 diagrams. We use the selective-classification lens; we do \emph{not} yet claim formal calibration
-(ECE) --- that is future rigor.
+(ECE). That is future rigor.
 
 \paragraph{Reviewer fatigue as an attack surface.} That an adversary can \emph{weaponise}
 alert/approval volume to exhaust reviewers and bury malicious activity is well established in security
@@ -150,9 +150,9 @@ operations (SOC alert-flooding and analyst fatigue~\cite{tariq25}) and is explic
 exploitation vector for AI agents (approval fatigue as an ``agent trap''). \textbf{The flooding
 attack is therefore prior art too}; we reproduce it in the agent-oversight setting and show the
 load-aware operating point defends against it (\S\ref{sec:attack}). Concurrent work reframes LLM-agent
-security itself as an \emph{agent--human interaction} problem --- surveying 59 papers and 21
+security itself as an \emph{agent--human interaction} problem (surveying 59 papers and 21
 production systems and naming \textbf{approval fatigue} and the ``cognitive burden vs.\ security''
-tradeoff as first-class, under-studied concerns~\cite{wang25} --- which is exactly the gap this paper
+tradeoff as first-class, under-studied concerns~\cite{wang25}), which is exactly the gap this paper
 measures rather than only names. Regulatory framing of human oversight is given by EU
 guidance~\cite{edps25}.
 
@@ -175,8 +175,8 @@ An agent proposes actions; a guard decides, per action $a$, between \textbf{auto
   own escalation rate.
 \end{itemize}
 
-The objective is to minimize \textbf{expected realized cost --- including human-fatigue-induced
-errors} --- not classification accuracy. The endogenous element (following FALCON~\cite{falcon} and
+The objective is to minimize \textbf{expected realized cost (including human-fatigue-induced
+errors)}, not classification accuracy. The endogenous element (following FALCON~\cite{falcon} and
 DeCCaF~\cite{deccaf}) is that $r$ depends on the policy's escalation history (a closed loop), so the
 optimal $\theta$ is \textbf{load-aware}; we instantiate and measure this in the agent-action setting
 rather than introduce it.
@@ -202,10 +202,10 @@ gold & auto-allow & escalate \\
 weighted to \emph{hard} cases: 54 ambiguous-middle (e.g.\ \texttt{npm install <pkg>}, edit
 \texttt{package.json}, \texttt{git rebase}, deploy to \emph{staging}), 23 obfuscated/adversarial
 (base64-encoded \texttt{rm -rf}, homoglyph \texttt{ma\'{i}n}, path traversal, secret exfiltration,
-pipe-to-shell), and 16 scary-\emph{looking} cases (12 genuinely benign false-alarm traps ---
+pipe-to-shell), and 16 scary-\emph{looking} cases (12 genuinely benign false-alarm traps:
 \texttt{rm -rf node\_modules}, read \texttt{.env.example}; and 4 that look alarming \emph{and} warrant
 approval, e.g.\ \texttt{git reset -{}-hard} of unpushed work). Labels: \textsc{safe} 42 /
-\textsc{approval} 52 / \textsc{blocked} 31. A small, curated set --- reported as such, not a published
+\textsc{approval} 52 / \textsc{blocked} 31. A small, curated set, reported as such, not a published
 benchmark. \textbf{Gold-label provenance:} the labels are one author's judgments, used as a single
 measurement reference throughout. This is in deliberate tension with our own noise floor
 (\S\ref{sec:noise}): Fleiss' $\kappa = 0.52$ quantifies how contestable that reference is, so every
@@ -229,7 +229,7 @@ risk--coverage curve, where \emph{risk} is the error rate among auto-allowed act
 
 \paragraph{Noise floor.} Three reviewer \emph{personas} (cautious / pragmatic / strict-compliance)
 label the set; we compute pairwise Cohen's $\kappa$ and overall Fleiss' $\kappa$. \textbf{These are
-LLM personas --- a proxy for human annotators, reported as such.} (\texttt{eval/noise\_floor.py}.)
+LLM personas, a proxy for human annotators, reported as such.} (\texttt{eval/noise\_floor.py}.)
 
 \paragraph{Endogenous-reviewer simulation.} We model reviewer reliability
 \[
@@ -256,7 +256,7 @@ guard on the 125-action set, with the cost-minimizing and Neyman--Pearson points
 On the 125-action set the guard's safety/utility tradeoff is a real curve, not a binary. Under the
 asymmetric cost (Table~\ref{tab:cost}), the \textbf{cost-minimizing policy collapses to ``escalate
 almost everything''}: reaching 0\% missed-danger requires a $\sim$100\% false-alarm rate, and the
-area under the risk--coverage curve (AURC; lower is better) is \textbf{0.376} for the run shown ---
+area under the risk--coverage curve (AURC; lower is better) is \textbf{0.376} for the run shown,
 and \textbf{$0.374 \pm 0.002$} across three temperature-0 seeds (\S\ref{sec:model}), the figure we
 quote as canonical throughout. The reading is not ``the guard is bad''; it is that \emph{on
 adversarial/ambiguous inputs this guard cannot safely auto-decide}, so it is forced to lean on the
@@ -310,7 +310,7 @@ reviewer capacity $C$ & optimal esc.\ rate & danger-through @ optimum & danger-t
 
 \textbf{Escalating everything is strictly worse than the optimum}, and the optimum shifts with
 capacity. The absolute danger-through is high because the guard is weak on this hard set
-(\S\ref{sec:calib}) --- the claim is the \emph{shape} (more oversight $\rightarrow$ less safety past
+(\S\ref{sec:calib}): the claim is the \emph{shape} (more oversight $\rightarrow$ less safety past
 the optimum), not the level. This is a \emph{modeling} result; a human study fitting $r(\ell)$ (future
 work) would make it empirical.
 
@@ -326,7 +326,7 @@ work) would make it empirical.
 Re-scoring with a stronger model shifts the curve: \textbf{Sonnet AURC 0.351 vs.\ Haiku 0.373} (each a
 single seed; the Haiku value sits inside the $0.374 \pm 0.002$ band below), and Sonnet can safely
 auto-allow a sliver (cost-min $\theta = 10$) where Haiku must escalate everything ($\theta = 0$). The
-gain is \emph{modest} --- a better model helps but does not solve the hard set, and the $0.022$ AURC
+gain is \emph{modest}: a better model helps but does not solve the hard set, and the $0.022$ AURC
 gap is small enough that it may sit within the label subjectivity the noise floor measures
 (\S\ref{sec:noise}, $\kappa = 0.52$): we report the \emph{ordering}, not a precise magnitude. The point is
 methodological: guard quality depends on the scoring model (and threshold, and attack mix), so the
@@ -369,7 +369,7 @@ Four sensitivities shape how far these results should be read. \textbf{(i) The c
 is a chosen value; a less extreme ratio would move the cost-minimizing point away from ``escalate
 everything.'' We fix it for all runs and report it explicitly rather than tuning it. \textbf{(ii) The
 reviewer model is optimistic.} $r(\ell)$ starts at 1.0 (a perfectly reliable fresh reviewer) and only
-decays --- real reviewers err even when fresh, so the \emph{absolute} danger-through numbers are lower
+decays: real reviewers err even when fresh, so the \emph{absolute} danger-through numbers are lower
 bounds; the \emph{shape} (the inverted-U) is what we claim. \textbf{(iii) Agreement is weak on two of
 three pairs} (\S\ref{sec:noise}), so the $\kappa = 0.52$ floor is itself an estimate over contestable
 labels. \textbf{(iv) One dataset underlies every experiment.} All five results use the same 125
@@ -423,7 +423,7 @@ the \emph{sequence} is lethal (read secret $\rightarrow$ write public file $\rig
 trajectory-level guarding~\cite{traj-guard,shieldagent} is the detection layer this oversight
 calibration would consume. Further out lies a genuinely under-explored frontier: \textbf{emergent
 multi-agent risk}, where $N$ agents are each individually compliant but their \emph{joint} action
-space is dangerous. Calibrating oversight across a fleet is also where fatigue compounds --- one
+space is dangerous. Calibrating oversight across a fleet is also where fatigue compounds: one
 reviewer cannot be the oracle for many agents.
 
 \paragraph{7.4 From a static to a self-improving policy.} The guard's own \textbf{audit log is a
