@@ -48,7 +48,8 @@ the maximum), a setting a load-aware policy also uses to resist a \emph{flooding
 rubber-stamps a malicious action past a fatigued reviewer. Framed this way, agent oversight is not
 only a classification problem (which action is risky?) but a resource-allocation one: human attention
 is finite, and the guard's escalation policy spends it. \textbf{We claim none of these mechanisms
-as novel:} fatigue-aware learning-to-defer (FALCON~\cite{falcon}, DeCCaF~\cite{deccaf}),
+as novel:} fatigue-aware learning-to-defer (FALCON~\cite{falcon}), cost-sensitive deferral under workload
+constraints (DeCCaF~\cite{deccaf}),
 trajectory-level guarding, and fatigue/flooding attacks on human reviewers (security-operations alert
 fatigue~\cite{tariq25}) are all prior art we cite. Our contribution is an \textbf{open-source
 agent-oversight system} that operationalizes and \emph{measures} these ideas together in the
@@ -101,7 +102,8 @@ rubber-stamping (a well-documented ``approval fatigue'' failure mode). Crucially
 \textbf{endogenous}: the guard's own escalation policy degrades the very oracle it escalates to.
 
 \paragraph{What this paper is --- and is not.} It is \textbf{not} a novel-mechanism paper.
-Fatigue-aware deferral~\cite{falcon,deccaf}, trajectory-level guarding, selective classification, and
+Fatigue-aware deferral~\cite{falcon}, cost- and capacity-constrained deferral~\cite{deccaf},
+trajectory-level guarding, selective classification, and
 fatigue/flooding attacks on human reviewers~\cite{tariq25} are all established. It is an
 \textbf{applied, measurement-driven systems} study: we bring these strands together into one
 open-source agent-oversight firewall and \emph{measure} what is usually asserted. Our contributions
@@ -150,12 +152,12 @@ which consumes whatever detection signal exists.
 \emph{when} to defer to a human and how to \emph{complement} human weaknesses: learning to
 defer~\cite{madras18}, complement-humans~\cite{charusaie22}, learning when to require
 feedback~\cite{pugnana25}, complementary team performance~\cite{hemmer24}, appropriate
-reliance~\cite{schemmer23}. Most assume a \textbf{static} expert, but two recent works already
-drop that assumption and model a \textbf{fatiguing/workload-varying} one: \textbf{FALCON}~\cite{falcon}
-(fatigue-aware learning-to-defer with psychologically-grounded fatigue curves) and
-\textbf{DeCCaF}~\cite{deccaf} (cost-sensitive deferral under workload constraints). \textbf{The
-endogenous-reviewer idea is therefore theirs, not ours}; we \emph{apply} it to the LLM-agent
-action-gating setting and measure it.
+reliance~\cite{schemmer23}. Most assume a \textbf{static} expert. Two recent works move beyond pure static-expert L2D in
+different ways: \textbf{FALCON}~\cite{falcon} drops the static assumption with
+psychologically-grounded fatigue curves, while \textbf{DeCCaF}~\cite{deccaf} keeps static per-expert
+error but adds cost-sensitive, capacity-constrained assignment. \textbf{The endogenous/fatiguing-reviewer
+idea is therefore FALCON's, not ours}; the cost-and-capacity framing is DeCCaF's. We \emph{apply} both
+to the LLM-agent action-gating setting and measure them.
 
 \paragraph{Selective classification and calibration.} Risk--coverage curves and AURC come from
 selective classification~\cite{geifman17}; distribution-free guarantees from conformal
@@ -195,9 +197,9 @@ An agent proposes actions; a guard decides, per action $a$, between \textbf{auto
 \end{itemize}
 
 The objective is to minimize \textbf{expected realized cost (including human-fatigue-induced
-errors)}, not classification accuracy. The endogenous element (following FALCON~\cite{falcon} and
-DeCCaF~\cite{deccaf}) is that $r$ depends on the policy's escalation history (a closed loop), so the
-optimal $\theta$ is \textbf{load-aware}; we instantiate and measure this in the agent-action setting
+errors)}, not classification accuracy. The endogenous element (following FALCON~\cite{falcon}) is that $r$ depends on the policy's
+escalation history (a closed loop), so the optimal $\theta$ is \textbf{load-aware}, in the
+cost-sensitive, capacity-constrained spirit of DeCCaF~\cite{deccaf}; we instantiate and measure this in the agent-action setting
 rather than introduce it.
 
 \begin{table}[t]
@@ -409,7 +411,8 @@ confirmations.
   assumed.
   \item \textbf{Operating-point analysis, not formal calibration} (no ECE/reliability yet).
   \item \textbf{The core mechanisms are prior art} (verified): fatigue-aware
-  deferral~\cite{falcon,deccaf} and reviewer-fatigue attacks~\cite{tariq25} are established. This is
+  deferral~\cite{falcon}, cost-/capacity-constrained deferral~\cite{deccaf}, and reviewer-fatigue
+  attacks~\cite{tariq25} are established. This is
   an \emph{applied/measurement/systems} study, not a theoretical contribution --- positioned as such,
   not as a discovery.
 \end{itemize}

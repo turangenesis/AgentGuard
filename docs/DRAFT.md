@@ -24,7 +24,7 @@ rate: *more human oversight can make a system less safe*, and the safety-optimal
 attack* that rubber-stamps a malicious action past a fatigued reviewer. Framed this way, agent oversight is not
 only a classification problem (which action is risky?) but a resource-allocation one: human attention
 is finite, and the guard's escalation policy spends it. **We claim none of these
-mechanisms as novel:** fatigue-aware learning-to-defer (FALCON [13], DeCCaF [14]), trajectory-level
+mechanisms as novel:** fatigue-aware learning-to-defer (FALCON [13]), cost-sensitive deferral under workload constraints (DeCCaF [14]), trajectory-level
 guarding, and fatigue/flooding attacks on human reviewers (security-operations alert fatigue [15])
 are all prior art we cite. Our contribution is an **open-source agent-oversight system** that
 operationalizes and *measures* these ideas together in the LLM-agent action-gating setting —
@@ -76,7 +76,7 @@ human reviewers *fatigue*: every escalation spends attention and nudges them tow
 the guard's own escalation policy degrades the very oracle it escalates to.
 
 **What this paper is, and is not.** It is **not** a novel-mechanism paper. Fatigue-aware deferral
-[13,14], trajectory-level guarding, selective classification, and fatigue/flooding attacks on
+[13], cost- and capacity-constrained deferral [14], trajectory-level guarding, selective classification, and fatigue/flooding attacks on
 human reviewers [15] are all established. It is an **applied, measurement-driven systems** study:
 we bring these strands together into one open-source agent-oversight firewall and *measure* what is
 usually asserted. Our contributions are therefore artifacts and measurements, not theory:
@@ -120,11 +120,12 @@ whatever detection signal exists.
 **Learning to defer, complementarity, and the fatiguing expert.** A mature line studies *when* to
 defer to a human and how to *complement* human weaknesses: learning to defer [5], complement-humans
 [6], learning when to require feedback [7], complementary team performance [8], appropriate reliance
-[9]. Most assume a **static** expert, but two recent works already drop that assumption and model a
-**fatiguing/workload-varying** one: **FALCON** [13] (fatigue-aware learning-to-defer with
-psychologically-grounded fatigue curves) and **DeCCaF** [14] (cost-sensitive deferral under workload
-constraints). **The endogenous-reviewer idea is therefore theirs, not ours**; we *apply* it to the
-LLM-agent action-gating setting and measure it.
+[9]. Most assume a **static** expert. Two recent works move beyond pure static-expert L2D in different
+ways: **FALCON** [13] drops the static assumption with psychologically-grounded fatigue curves,
+while **DeCCaF** [14] keeps static per-expert error but adds cost-sensitive, capacity-constrained
+assignment. **The endogenous/fatiguing-reviewer idea is therefore FALCON's, not ours**; the
+cost-and-capacity framing is DeCCaF's. We *apply* both to the LLM-agent action-gating setting and
+measure them.
 
 **Selective classification and calibration.** Risk–coverage curves and AURC come from selective
 classification [10]; distribution-free guarantees from conformal prediction [11]; calibration is
@@ -160,8 +161,8 @@ An agent proposes actions; a guard decides, per action `a`, between **auto-allow
   load `ℓ`. This is the endogenous element: `ℓ` is driven by the guard's own escalation rate.
 
 The objective is to minimize **expected realized cost, including human-fatigue-induced errors**,
-not classification accuracy. The endogenous element (following FALCON [13] and DeCCaF [14]) is that
-`r` depends on the policy's escalation history (a closed loop), so the optimal `θ` is **load-aware**;
+not classification accuracy. The endogenous element (following FALCON [13]) is that
+`r` depends on the policy's escalation history (a closed loop), so the optimal `θ` is **load-aware**, in the cost-sensitive, capacity-constrained spirit of DeCCaF [14];
 we instantiate and measure this in the agent-action setting rather than introduce it.
 
 **Table 1 — asymmetric cost (gold × decision).**
@@ -331,7 +332,7 @@ small set, not five independent confirmations.
 - **Sampling sensitivity is small but nonzero even at the deployed temperature 0** (AURC
   0.374 ± 0.002 over 3 runs; the Anthropic API is not bit-exact at temp 0): quantified, not assumed.
 - **Operating-point analysis, not formal calibration** (no ECE/reliability yet).
-- **The core mechanisms are prior art** (verified): fatigue-aware deferral [13,14] and
+- **The core mechanisms are prior art** (verified): fatigue-aware deferral [13], cost-/capacity-constrained deferral [14], and
   reviewer-fatigue attacks [15] are established. This is an *applied/measurement/systems* study, not
   a theoretical contribution — positioned as such, not as a discovery.
 
