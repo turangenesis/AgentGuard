@@ -28,7 +28,7 @@ _SCRIPT: list[tuple[str, dict]] = [
 ]
 
 _DONE = (
-    "Demo complete. You just watched AgentGuard execute a SAFE file read, BLOCK a "
+    "Demo complete. You just watched Headroom execute a SAFE file read, BLOCK a "
     "destructive shell command outright, and PAUSE a production deploy for your approval."
 )
 

@@ -1,6 +1,6 @@
 # TESTING.md
 
-Test, build, lint, and run commands for AgentGuard.
+Test, build, lint, and run commands for Headroom.
 See also: `docs/VERIFICATION.md` — verification levels and what "verified enough" means.
 
 ---
@@ -41,7 +41,7 @@ ruff format .         # auto-format
 ## Run locally
 
 ```bash
-uvicorn agentguard.api:app --reload    # dashboard → http://localhost:8000
+uvicorn headroom.api:app --reload    # dashboard → http://localhost:8000
 python -m scripts.demo                 # drives the full demo run (curated + scripted fallback)
 ```
 
@@ -54,7 +54,7 @@ python -m scripts.demo                 # drives the full demo run (curated + scr
 bash scripts/smoke-check.sh
 ```
 
-Pre-implementation it verifies kit + project scaffolding files exist. Once `pyproject.toml`/`requirements.txt` and the `agentguard/` package exist, it also runs `pytest` automatically.
+Pre-implementation it verifies kit + project scaffolding files exist. Once `pyproject.toml`/`requirements.txt` and the `headroom/` package exist, it also runs `pytest` automatically.
 
 ---
 

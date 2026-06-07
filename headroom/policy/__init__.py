@@ -1,4 +1,4 @@
-"""AgentGuard policy engine: deterministic rules first, LLM judge for the middle."""
+"""Headroom policy engine: deterministic rules first, LLM judge for the middle."""
 
 from .guardian import classify
 from .rules import RULES, Rule, match_rules

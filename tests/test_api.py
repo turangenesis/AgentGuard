@@ -11,7 +11,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from agentguard import api, db
+from headroom import api, db
 from tests._helpers import FakeWorker, ai_final, ai_tool
 
 
@@ -45,12 +45,12 @@ def test_root_serves_dashboard(client):
     res = client.get("/")
     assert res.status_code == 200
     assert "text/html" in res.headers["content-type"]
-    assert "AgentGuard" in res.text
+    assert "Headroom" in res.text
 
 
 def test_api_info_reports_service(client):
     body = client.get("/api").json()
-    assert body["service"] == "AgentGuard"
+    assert body["service"] == "Headroom"
     assert "/task" in body["endpoints"]
 
 

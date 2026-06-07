@@ -1,4 +1,4 @@
-"""FastAPI surface over the AgentGuard graph.
+"""FastAPI surface over the Headroom graph.
 
 Endpoints:
   POST /task                    start a worker run (background), returns thread_id
@@ -41,10 +41,10 @@ from .mcp_server import MCP_THREAD_PREFIX
 from .policy.guardian import Judge, cost_stats, default_judge
 
 # --- configuration (env-overridable) --------------------------------------- #
-AUDIT_DB = os.getenv("AGENTGUARD_DB", "agentguard.db")
-CHECKPOINT_DB = os.getenv("AGENTGUARD_CHECKPOINT_DB", "agentguard_checkpoints.db")
+AUDIT_DB = os.getenv("HEADROOM_DB", "headroom.db")
+CHECKPOINT_DB = os.getenv("HEADROOM_CHECKPOINT_DB", "headroom_checkpoints.db")
 TTL_MS = int(os.getenv("APPROVAL_TTL_MS", "120000"))
-SWEEP_INTERVAL_S = float(os.getenv("AGENTGUARD_SWEEP_INTERVAL_S", "5"))
+SWEEP_INTERVAL_S = float(os.getenv("HEADROOM_SWEEP_INTERVAL_S", "5"))
 
 _DASHBOARD = Path(__file__).resolve().parent / "templates" / "index.html"
 _CALIBRATION = Path(__file__).resolve().parent.parent / "eval" / "calibration.json"
@@ -157,7 +157,7 @@ async def lifespan(app: FastAPI):
             await sweeper
 
 
-app = FastAPI(title="AgentGuard", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Headroom", version="0.1.0", lifespan=lifespan)
 
 
 class TaskRequest(BaseModel):
@@ -173,7 +173,7 @@ def dashboard() -> HTMLResponse:
 @app.get("/api")
 def api_info() -> dict:
     return {
-        "service": "AgentGuard",
+        "service": "Headroom",
         "tagline": "gives AI coding agents brakes",
         "dashboard": "/",
         "endpoints": [

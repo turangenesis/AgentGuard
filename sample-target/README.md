@@ -1,10 +1,10 @@
 # TaskFlow API
 
 A small REST service for managing tasks and projects. This repository is the
-**sample target** that an AI coding agent operates on while AgentGuard supervises it.
+**sample target** that an AI coding agent operates on while Headroom supervises it.
 
 Reads against these files are **real** — the worker agent genuinely inspects this
-code. Write/shell/git/deploy actions are simulated by AgentGuard (no side effects).
+code. Write/shell/git/deploy actions are simulated by Headroom (no side effects).
 
 ## Layout
 

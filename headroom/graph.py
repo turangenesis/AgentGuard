@@ -1,6 +1,6 @@
 """The LangGraph runtime: worker -> guardian -> (execute | interrupt | deny) -> loop.
 
-This is the heart of AgentGuard. A real worker LLM proposes
+This is the heart of Headroom. A real worker LLM proposes
 one tool call at a time; the guardian classifies it; SAFE executes, BLOCKED is denied,
 and APPROVAL_REQUIRED hits an ``interrupt()`` node that pauses the graph and checkpoints
 state to SQLite. A later ``Command(resume=...)`` (from the API, by ``thread_id``)
@@ -107,7 +107,7 @@ def build_graph(
     audit_db: str = db.DEFAULT_DB,
     ttl_ms: int = 120_000,
 ):
-    """Compile the AgentGuard graph. ``worker_model`` needs a ``.invoke(messages)`` ->
+    """Compile the Headroom graph. ``worker_model`` needs a ``.invoke(messages)`` ->
     AIMessage interface (real: ChatAnthropic.bind_tools(...); tests: a fake)."""
 
     # ----- nodes ----------------------------------------------------------- #
@@ -161,7 +161,7 @@ def build_graph(
             msgs.append(
                 ToolMessage(
                     content=(
-                        "Deferred: AgentGuard reviews one action at a time. Resubmit this next."
+                        "Deferred: Headroom reviews one action at a time. Resubmit this next."
                     ),
                     tool_call_id=tc["id"],
                 )

@@ -12,8 +12,8 @@ import sqlite3
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
-from agentguard import db
-from agentguard.graph import build_graph, initial_state, is_paused
+from headroom import db
+from headroom.graph import build_graph, initial_state, is_paused
 from tests._helpers import FakeWorker, ai_final, ai_tool
 
 

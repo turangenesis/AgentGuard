@@ -1,4 +1,4 @@
-"""AgentGuard as an MCP server — any MCP-compatible agent routes its actions through the guard.
+"""Headroom as an MCP server — any MCP-compatible agent routes its actions through the guard.
 
 This is the *cooperative* integration (Level 1 on the no-bypass ladder): a host agent (Claude
 Code, Cursor, a custom agent) is configured to call these tools before it acts. Two tools:
@@ -9,10 +9,10 @@ Code, Cursor, a custom agent) is configured to call these tools before it acts. 
   - ``check_review(action_id)`` — poll the human's decision (pending / approved / rejected /
     expired). The host agent proceeds on "approved", aborts on "rejected"/"expired".
 
-It writes to the SAME audit + pending SQLite DB as the dashboard (``AGENTGUARD_DB``), so an
+It writes to the SAME audit + pending SQLite DB as the dashboard (``HEADROOM_DB``), so an
 external agent's actions appear there and a human approves/rejects them in the same UI.
 
-Run as a server:  python -m agentguard.mcp_server   (stdio transport)
+Run as a server:  python -m headroom.mcp_server   (stdio transport)
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from . import db
 from .policy.guardian import classify, default_judge
 from .types import ActionKind, ProposedAction
 
-AUDIT_DB = os.getenv("AGENTGUARD_DB", "agentguard.db")
+AUDIT_DB = os.getenv("HEADROOM_DB", "headroom.db")
 TTL_MS = int(os.getenv("APPROVAL_TTL_MS", "120000"))
 MCP_THREAD_PREFIX = "mcp-"  # marks externally-submitted actions (no LangGraph run to resume)
 
@@ -91,7 +91,7 @@ def build_server():
     """Build the FastMCP server exposing the guard as two tools."""
     from mcp.server.fastmcp import FastMCP
 
-    mcp = FastMCP("AgentGuard")
+    mcp = FastMCP("Headroom")
 
     @mcp.tool()
     def submit_action_for_review(

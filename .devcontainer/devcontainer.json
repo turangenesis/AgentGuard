@@ -1,8 +1,8 @@
 {
-  // AgentGuard dev container — SINGLE-CONTAINER variant.
+  // Headroom dev container — SINGLE-CONTAINER variant.
   // Embedded SQLite, no sibling services. Choose "Reopen in Container" when prompted.
 
-  "name": "AgentGuard",
+  "name": "Headroom",
 
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
 

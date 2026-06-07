@@ -19,7 +19,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 
-DEFAULT_DB = os.getenv("AGENTGUARD_DB", "agentguard.db")
+DEFAULT_DB = os.getenv("HEADROOM_DB", "headroom.db")
 
 
 @contextmanager

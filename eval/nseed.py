@@ -16,7 +16,7 @@ import os
 import statistics
 from pathlib import Path
 
-from agentguard.policy.guardian import make_llm_scorer
+from headroom.policy.guardian import make_llm_scorer
 
 from .calibrate import evaluate, score_dataset, summarize
 from .run_eval import load_dataset

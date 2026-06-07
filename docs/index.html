@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AgentGuard — interactive demo</title>
-  <meta name="description" content="AgentGuard gives AI coding agents brakes: a guardian classifies every action safe / approval-required / blocked before it runs. Interactive demo — no install, no API key." />
+  <title>Headroom — interactive demo</title>
+  <meta name="description" content="Headroom gives AI coding agents brakes: a guardian classifies every action safe / approval-required / blocked before it runs. Interactive demo — no install, no API key." />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes pulse-ring { 0% { opacity: .9 } 50% { opacity: .35 } 100% { opacity: .9 } }
@@ -44,7 +44,7 @@
         <span class="text-rose-300">less</span> safe.</span>
       </p>
       <div class="flex gap-4 mt-4 text-sm">
-        <a id="repo-link" href="https://github.com/turangenesis/AgentGuard"
+        <a id="repo-link" href="https://github.com/turangenesis/headroom"
            class="text-emerald-400 hover:text-emerald-300 underline">Code &amp; data ↗</a>
         <a href="#research" class="text-violet-300 hover:text-violet-200 underline">The paper finding ↓</a>
       </div>
@@ -209,8 +209,8 @@
         sequence and pre-computed scores entirely in your browser. It is <span class="text-slate-400">not</span> a live LLM agent.
       </p>
       <p class="text-xs">
-        Run the real thing: <code class="text-slate-400">uvicorn agentguard.api:app</code> →
-        <a id="repo-link-2" href="https://github.com/turangenesis/AgentGuard" class="text-emerald-400 hover:text-emerald-300 underline">the repo</a>
+        Run the real thing: <code class="text-slate-400">uvicorn headroom.api:app</code> →
+        <a id="repo-link-2" href="https://github.com/turangenesis/headroom" class="text-emerald-400 hover:text-emerald-300 underline">the repo</a>
         has the full worker↔guardian↔human system, the eval harness, the MCP server, and the paper.
       </p>
     </footer>
@@ -231,7 +231,7 @@
       `<span class="inline-block rounded px-2 py-0.5 text-xs font-medium ${cls}">${esc(text)}</span>`;
 
     // ───────────────────── flow replay ─────────────────────
-    // The three scripted actions — mirrors agentguard/demo.py + the real ruleset.
+    // The three scripted actions — mirrors headroom/demo.py + the real ruleset.
     const STEPS = [
       { kind: "read",   target: "src/index.ts",
         verdict: "SAFE", source: "deterministic rule",

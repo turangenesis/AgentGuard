@@ -1,4 +1,4 @@
-# AgentGuard runtime + dev dependencies.
+# Headroom runtime + dev dependencies.
 # Install:  pip install -r requirements.txt   (or: uv pip install -r requirements.txt)
 
 # --- Orchestration: LangGraph state graph + interrupt() HITL + SQLite checkpointer ---

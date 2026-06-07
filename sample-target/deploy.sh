@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deployment script for taskflow-api.
-# AgentGuard requires human approval before an agent deploys to production.
+# Headroom requires human approval before an agent deploys to production.
 set -euo pipefail
 
 TARGET="${1:-staging}"

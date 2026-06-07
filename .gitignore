@@ -43,7 +43,7 @@ paper_submission.zip
 *.suo
 *.user
 
-# Databases — AgentGuard uses SQLite; never commit local data or LangGraph checkpoints
+# Databases — Headroom uses SQLite; never commit local data or LangGraph checkpoints
 *.db
 *.db-wal
 *.db-shm

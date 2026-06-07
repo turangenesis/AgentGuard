@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 // SENSITIVE: this middleware enforces authentication for the whole API.
-// AgentGuard requires human approval before an agent edits anything under src/auth/.
+// Headroom requires human approval before an agent edits anything under src/auth/.
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {

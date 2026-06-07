@@ -1,6 +1,6 @@
 # Paper source — *Oversight Has a Capacity*
 
-LaTeX source for the AgentGuard working paper. This folder is a **self-contained arXiv bundle**:
+LaTeX source for the Headroom working paper. This folder is a **self-contained arXiv bundle**:
 `main.tex` + `figures/` is everything the build needs.
 
 ## Build

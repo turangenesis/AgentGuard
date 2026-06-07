@@ -1,4 +1,4 @@
-"""Make the repo root importable so tests can `import agentguard` / `import eval`."""
+"""Make the repo root importable so tests can `import headroom` / `import eval`."""
 
 import os
 import sys

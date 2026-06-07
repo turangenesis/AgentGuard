@@ -1,6 +1,6 @@
 # EVAL.md — Cost-Aware Evaluation Methodology
 
-> This documents *how* AgentGuard's guardian is evaluated and how that evaluation is
+> This documents *how* Headroom's guardian is evaluated and how that evaluation is
 > kept cheap. The calibration curve, noise floor, and cost meter are measured today;
 > numbers are reported only after they are **measured** — never asserted.
 
@@ -59,7 +59,7 @@ Separate the **agent-under-test** (the worker) from the **system-under-test** (t
 guardian forever. But **utility-under-attack** (does the agent still finish its task when the
 guard intervenes?) genuinely requires a **live worker** that sees the block and adapts — a
 replayed trace can't measure it. So: static replay for the fast loop, occasional live runs for
-the trajectory numbers. AgentGuard already uses the static-replay shape today
+the trajectory numbers. Headroom already uses the static-replay shape today
 ([eval/dataset.jsonl](../eval/dataset.jsonl) is a static action fixture with no live worker).
 
 ---
@@ -88,14 +88,14 @@ the trajectory numbers. AgentGuard already uses the static-replay shape today
 ### 1. Prompt caching on the guardian judge — *measure, don't assume*
 The guardian's stable prefix (classification instructions, output schema, and — later —
 few-shot examples) is sent with `cache_control: {"type": "ephemeral"}`
-([guardian.py](../agentguard/policy/guardian.py)). Cache reads bill at **0.1×** base.
+([guardian.py](../headroom/policy/guardian.py)). Cache reads bill at **0.1×** base.
 
 **Honest caveat:** Anthropic only caches a prefix **above a minimum length** (~1024 tokens
 for Sonnet, ~2048 for Haiku). The current guardian prompt is ~400 tokens — **likely below the
 threshold, so caching may not engage at all today.** That is precisely why we instrument it
 rather than trust it:
 
-- A **cost meter** (`cost_stats()` in [guardian.py](../agentguard/policy/guardian.py),
+- A **cost meter** (`cost_stats()` in [guardian.py](../headroom/policy/guardian.py),
   surfaced at **`GET /api` → `judge_cost`**) accumulates `input_tokens`, `output_tokens`,
   `cache_creation_tokens`, `cache_read_tokens`, and a derived `cache_hit_rate`.
 - If `cache_read_tokens` stays 0 across a run, caching isn't engaging — the fix is to grow the
@@ -104,7 +104,7 @@ rather than trust it:
 
 ### 2. Message Batches API — *offline eval only*
 Eval has no real-time requirement, so submit it as a **batch job**: **50% off** input + output,
-24h SLA. The **live system** (`agentguard.api:app`) stays **synchronous** — humans approving
+24h SLA. The **live system** (`headroom.api:app`) stays **synchronous** — humans approving
 actions need real-time. Batch is for the offline benchmark only. _Caveat:_ cache hits inside a
 batch are best-effort (timing varies), so model batch and caching as **additive when they
 land**, not a guaranteed multiplication.
@@ -117,9 +117,9 @@ above.)
 
 ### 4. Model tiering — *a deliberate decision, not a reflex*
 - **Worker (agent-under-test):** drop to **Haiku** for eval — it's just a cheap action proposer.
-  (Today's default worker is Sonnet, [graph.py](../agentguard/graph.py); cheaper is fine for eval.)
+  (Today's default worker is Sonnet, [graph.py](../headroom/graph.py); cheaper is fine for eval.)
 - **Guardian judge:** runs on **every** tool call in production, so a big model per action is a
-  real cost/latency tax. Today's default is **Haiku** ([guardian.py](../agentguard/policy/guardian.py)).
+  real cost/latency tax. Today's default is **Haiku** ([guardian.py](../headroom/policy/guardian.py)).
   Keep the shipped model honest in the eval — and treat **Haiku-judge vs Sonnet-judge hold rate**
   as an **ablation finding** ("a 5× cheaper judge concedes only X% hold rate"), not a cost compromise.
 

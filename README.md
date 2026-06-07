@@ -1,7 +1,7 @@
-# AgentGuard
+# Headroom
 
 ### A human-in-the-loop firewall for AI coding agents — and a measurement study of *when* to trust the human.
-*OpenClaw gives agents hands. AgentGuard gives them brakes.*
+*OpenClaw gives agents hands. Headroom gives them brakes.*
 
 **A thought experiment, before the architecture.**
 
@@ -23,21 +23,21 @@ The reframe: escalations aren't free. Each one spends a finite pool of human att
 
 > *This is the lens, not a discovery: the fatiguing-reviewer model is prior art (FALCON, DeCCaF). What this repo does is bring it to LLM-agent guards and put a curve on it.*
 
-AI agents now **run** code — deploy, delete, push to `main`. The usual safety answer is a human-approval gate. But a pause button is the easy part; the hard part is the **judgment** (which actions to stop) and the fact that the **human reviewer is subjective and gets tired**. AgentGuard is both a working gate *and* the apparatus that **measures** that judgment instead of guessing at it.
+AI agents now **run** code — deploy, delete, push to `main`. The usual safety answer is a human-approval gate. But a pause button is the easy part; the hard part is the **judgment** (which actions to stop) and the fact that the **human reviewer is subjective and gets tired**. Headroom is both a working gate *and* the apparatus that **measures** that judgment instead of guessing at it.
 
 **Two things at once, on purpose:**
 - 🛠️ **The system** — a worker LLM agent proposes actions; a guardian (deterministic rules + LLM risk judgment) classifies each **safe / approval-required / blocked**; risky ones pause the agent mid-task (LangGraph `interrupt()`) and wait for a human; every decision is audit-logged on a live dashboard with an interactive **calibration dial**.
 - 📊 **The measurement** — we frame the guard as *selective classification under asymmetric cost with noisy labels and a fatiguing reviewer*, and measure it: a calibration curve, a noise floor (Fleiss' κ = 0.52), the safety-vs-oversight **inverted-U**, a flooding **attack**, and model-dependence — **4 figures + a measured noise floor** (3 regenerate key-free; the 2 LLM-scored ones ship as committed artifacts and need an Anthropic key to regenerate). *(Scope: an applied/measurement project. The mechanisms — fatigue-aware deferral, flooding attacks — are prior art we cite; the contribution is the open-source system + the measurement. See **[docs/DRAFT.md](docs/DRAFT.md)**.)*
 
-> *Anyone can stop an agent. AgentGuard measures **when** to — and shows the cost of every setting.*
+> *Anyone can stop an agent. Headroom measures **when** to — and shows the cost of every setting.*
 
-**[▶ Live demo](https://turangenesis.github.io/AgentGuard/)** — block a `rm -rf`, approve a deploy, drag the calibration dial. No install, no API key.
+**[▶ Live demo](https://turangenesis.github.io/headroom/)** — block a `rm -rf`, approve a deploy, drag the calibration dial. No install, no API key.
 
-**Or run it locally in 60 seconds (no API key):** `uvicorn agentguard.api:app` → open the dashboard → **Run demo** (watch a `rm -rf` get blocked and a prod deploy pause for approval) → scroll to **Calibration explorer** and drag the dial.
+**Or run it locally in 60 seconds (no API key):** `uvicorn headroom.api:app` → open the dashboard → **Run demo** (watch a `rm -rf` get blocked and a prod deploy pause for approval) → scroll to **Calibration explorer** and drag the dial.
 
 ## The problem (why this isn't "just a pause button")
 
-As agents get real hands — deploy, delete, spend money, touch prod — the bottleneck isn't *can* we stop them; frameworks already do that. The bottleneck is *can we trust the thing deciding when to stop them.* Over-gate and humans rubber-stamp every alert until the guard is useless; under-gate and something blows up. Today that line is usually set by vibes. AgentGuard sets it **with data**.
+As agents get real hands — deploy, delete, spend money, touch prod — the bottleneck isn't *can* we stop them; frameworks already do that. The bottleneck is *can we trust the thing deciding when to stop them.* Over-gate and humans rubber-stamp every alert until the guard is useless; under-gate and something blows up. Today that line is usually set by vibes. Headroom sets it **with data**.
 
 ## How it works
 
@@ -61,7 +61,7 @@ python -m eval.calibrate            # prints the sweep + cost-min & Neyman-Pears
 python -m eval.calibrate --plot     # also writes eval/calibration.png
 ```
 
-![AgentGuard calibration curve — safety/utility tradeoff and expected cost vs threshold](eval/calibration.png)
+![Headroom calibration curve — safety/utility tradeoff and expected cost vs threshold](eval/calibration.png)
 
 On a **125-action hand-labeled set** deliberately weighted to *hard* cases — ambiguous-middle, obfuscated/adversarial (base64 `rm -rf`, homoglyph `maín`, path traversal, exfil), and scary-but-benign traps (small, reported as such — not a published benchmark) — the curve tells the story: against adversarial/ambiguous inputs the guard **cannot safely auto-decide** — reaching 0% dangerous-miss forces escalating almost everything (cost-minimizing policy ≈ "ask the human about everything"). That's the artifact *and* the finding: you read the guard's real operating limits off the curve with data — and on hard inputs it can't filter safely, which is exactly what forces high escalation onto a human (→ the research direction below).
 
@@ -93,24 +93,24 @@ cp .env.example .env                    # add ANTHROPIC_API_KEY (and optional La
 ## Usage
 
 ```bash
-uvicorn agentguard.api:app              # dashboard → http://localhost:8000 (Run demo needs no key)
+uvicorn headroom.api:app              # dashboard → http://localhost:8000 (Run demo needs no key)
 ```
 
 The dashboard shows a live activity feed, pending approvals with the guardian's reasoning, approve/reject, and a per-run cost line. The **Run demo** button drives a full SAFE → BLOCKED → APPROVAL flow with **no API key**. A **Calibration explorer** lets you *drag* the guard's aggressiveness and watch the missed-danger vs false-alarm tradeoff recolor across all 125 actions in real time — the curve made tangible, replaying saved scores (no API calls). Run `python -m eval.calibrate` once to populate it.
 
 ## Plug it into your own agent (MCP)
 
-AgentGuard is also an **MCP server**, so *your own* agent — Claude Code, Cursor, or a custom one — can route its actions through the guard. The agent doesn't open this app; it calls two tools (`submit_action_for_review`, `check_review`) before it acts. Add ~4 lines to your MCP client config:
+Headroom is also an **MCP server**, so *your own* agent — Claude Code, Cursor, or a custom one — can route its actions through the guard. The agent doesn't open this app; it calls two tools (`submit_action_for_review`, `check_review`) before it acts. Add ~4 lines to your MCP client config:
 
 ```jsonc
-{ "mcpServers": { "agentguard": { "command": "python", "args": ["-m", "agentguard.mcp_server"] } } }
+{ "mcpServers": { "headroom": { "command": "python", "args": ["-m", "headroom.mcp_server"] } } }
 ```
 
-Now when *your* agent wants to `git push` or `rm -rf`, it asks AgentGuard first — which returns **allow** / **blocked**, or **pending** (queued for a human to approve on the dashboard). See it without a real client:
+Now when *your* agent wants to `git push` or `rm -rf`, it asks Headroom first — which returns **allow** / **blocked**, or **pending** (queued for a human to approve on the dashboard). See it without a real client:
 
 ```bash
 python scripts/mcp_demo.py               # an external agent submits 3 actions over MCP → verdicts
-python -m agentguard.mcp_server          # run the MCP server itself (stdio)
+python -m headroom.mcp_server          # run the MCP server itself (stdio)
 ```
 
 > *Cooperative integration (the agent is configured to ask). True no-bypass — gateway / host-hook / sandbox — is the [enforcement ladder](ROADMAP.md) above this.*
@@ -130,7 +130,7 @@ Evaluation is **cost-aware by design** — prompt caching, the Message Batches A
 ## Reproduce the results
 
 ```bash
-git clone … && cd AgentGuard && pip install -r requirements.txt
+git clone … && cd Headroom && pip install -r requirements.txt
 
 # Key-free (replay committed scores / pure simulation) — exact paper numbers:
 python -m eval.inverted_u                # the inverted-U (Figure 2)  [reads committed calibration.json]

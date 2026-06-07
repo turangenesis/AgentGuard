@@ -7,15 +7,15 @@ from __future__ import annotations
 
 import pytest
 
-from agentguard.policy.guardian import classify
-from agentguard.types import (
+from eval.run_eval import score
+from headroom.policy.guardian import classify
+from headroom.types import (
     ActionKind,
     DecisionSource,
     GuardianDecision,
     ProposedAction,
     Verdict,
 )
-from eval.run_eval import score
 
 V = Verdict
 

@@ -1,1 +1,1 @@
-"""AgentGuard guardian evaluation harness."""
+"""Headroom guardian evaluation harness."""

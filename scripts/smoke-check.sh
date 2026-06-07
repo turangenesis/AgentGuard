@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# smoke-check.sh — health check for AgentGuard
+# smoke-check.sh — health check for Headroom
 #
 # Pre-implementation:  verifies kit + project scaffolding files exist.
 # Post-implementation: ALSO runs the test suite once the package + deps exist.
@@ -45,10 +45,10 @@ echo ""
 echo "=== Project code (activates once implemented) ==="
 if [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
   echo "  dependencies detected — checking package + running tests"
-  check_file "agentguard/__init__.py"
-  check_file "agentguard/graph.py"
-  check_file "agentguard/policy/guardian.py"
-  check_file "agentguard/api.py"
+  check_file "headroom/__init__.py"
+  check_file "headroom/graph.py"
+  check_file "headroom/policy/guardian.py"
+  check_file "headroom/api.py"
   if command -v pytest >/dev/null 2>&1; then
     echo ""
     echo "=== pytest ==="

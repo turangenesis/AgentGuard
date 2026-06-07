@@ -111,7 +111,7 @@ def classify(action: ProposedAction, judge: Judge | None = None) -> GuardianDeci
 # LLM judge (the ambiguous middle)
 # --------------------------------------------------------------------------- #
 _GUARDIAN_SYSTEM = """\
-You are AgentGuard's guardian: a security reviewer that classifies a single tool \
+You are Headroom's guardian: a security reviewer that classifies a single tool \
 call an AI coding agent wants to make on a codebase.
 
 Classify the action into exactly one verdict:
@@ -206,7 +206,7 @@ def rule_risk_score(action: ProposedAction) -> int | None:
 
 
 _SCORER_SYSTEM = """\
-You are AgentGuard's risk scorer. Given ONE tool call an AI coding agent wants to make \
+You are Headroom's risk scorer. Given ONE tool call an AI coding agent wants to make \
 on a codebase, output a single integer 0-100 for how risky and hard-to-reverse it is:
 - 0-20  : trivially safe, easily reversible (read source, list dirs, run tests/build/lint).
 - 21-60 : plausibly risky or hard to reverse (deps/config/CI edits, network access, history-

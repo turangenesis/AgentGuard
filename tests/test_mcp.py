@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from agentguard import db, mcp_server
+from headroom import db, mcp_server
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def test_unknown_action_id(mcp_db):
 def test_mcp_action_expires_directly_without_a_graph(mcp_db, monkeypatch):
     # Regression: an expired MCP action must resolve directly (no LangGraph run to resume),
     # so the TTL sweeper can't crash on it and silently defeat fail-safe-deny.
-    from agentguard import api
+    from headroom import api
 
     monkeypatch.setattr(api, "AUDIT_DB", mcp_db)
     action_id = mcp_server.review_action("deploy", "deploy", "production", judge=None)["action_id"]

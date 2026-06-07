@@ -22,8 +22,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-from agentguard.policy.guardian import Judge, classify, default_judge
-from agentguard.types import ActionKind, ProposedAction, Verdict
+from headroom.policy.guardian import Judge, classify, default_judge
+from headroom.types import ActionKind, ProposedAction, Verdict
 
 DATASET = Path(__file__).resolve().parent / "dataset.jsonl"
 _LABELS = [Verdict.SAFE, Verdict.APPROVAL_REQUIRED, Verdict.BLOCKED]
@@ -91,7 +91,7 @@ def score(records: list[dict], judge: Judge | None) -> dict[str, Any]:
 
 def _print_report(result: dict, judge_on: bool) -> None:
     print("\n" + "=" * 64)
-    print("  AgentGuard guardian eval")
+    print("  Headroom guardian eval")
     print("=" * 64)
     print(f"  dataset size        : {result['n']} hand-labeled actions")
     print(f"  LLM judge           : {'ON' if judge_on else 'OFF (middle -> fail-safe APPROVAL)'}")

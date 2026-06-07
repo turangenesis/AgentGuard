@@ -20,8 +20,8 @@ import argparse
 import json
 from pathlib import Path
 
-from agentguard.policy.guardian import Scorer, default_scorer, rule_risk_score
-from agentguard.types import Verdict
+from headroom.policy.guardian import Scorer, default_scorer, rule_risk_score
+from headroom.types import Verdict
 
 from .run_eval import _action, load_dataset
 
@@ -125,7 +125,7 @@ def score_dataset(records: list[dict], scorer: Scorer | None) -> tuple[list[dict
 
 def _print_report(points: list[dict], summ: dict, meta: dict, n: int) -> None:
     print("\n" + "=" * 70)
-    print("  AgentGuard calibration — selective classification under asymmetric cost")
+    print("  Headroom calibration — selective classification under asymmetric cost")
     print("=" * 70)
     print(f"  dataset       : {n} hand-labeled actions")
     print(f"  risk scorer   : {meta['scorer']}")
@@ -212,7 +212,7 @@ def plot_curve(points: list[dict], summ: dict, out_path: Path) -> None:
     ax2.grid(alpha=0.2)
 
     fig.suptitle(
-        "AgentGuard calibration — selective classification under asymmetric cost", fontsize=11
+        "Headroom calibration — selective classification under asymmetric cost", fontsize=11
     )
     fig.tight_layout()
     fig.savefig(out_path, dpi=130)
@@ -220,7 +220,7 @@ def plot_curve(points: list[dict], summ: dict, out_path: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="AgentGuard calibration eval")
+    parser = argparse.ArgumentParser(description="Headroom calibration eval")
     parser.add_argument("--plot", action="store_true", help="also write calibration.png")
     args = parser.parse_args()
 

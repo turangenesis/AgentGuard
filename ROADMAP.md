@@ -1,11 +1,11 @@
 # Roadmap
 
-> *OpenClaw gives agents hands. AgentGuard gives them brakes.*
+> *OpenClaw gives agents hands. Headroom gives them brakes.*
 > The arc from "the brakes work" to "the brakes survive an attacker, act on real machinery, and scale to a fleet."
 
-> **The thesis (what's actually hard):** *Stopping an agent is a framework feature — a brake pedal. Knowing **when** to stop it, and **proving** the decision is calibrated, is the product.* A pause button is plumbing; LangGraph hands it to you for free. What it refuses to answer is whether your approval policy is too paranoid (humans rubber-stamp every alert until the gate is useless) or too lax (something blows up). That line is usually set by vibes. AgentGuard makes the guard's judgment **measurable and tunable** — it's *selective classification under asymmetric cost with noisy labels*, and the deliverable is the **measured false-alarm-vs-missed-danger curve**, not a single accuracy number.
+> **The thesis (what's actually hard):** *Stopping an agent is a framework feature — a brake pedal. Knowing **when** to stop it, and **proving** the decision is calibrated, is the product.* A pause button is plumbing; LangGraph hands it to you for free. What it refuses to answer is whether your approval policy is too paranoid (humans rubber-stamp every alert until the gate is useless) or too lax (something blows up). That line is usually set by vibes. Headroom makes the guard's judgment **measurable and tunable** — it's *selective classification under asymmetric cost with noisy labels*, and the deliverable is the **measured false-alarm-vs-missed-danger curve**, not a single accuracy number.
 >
-> *Anyone can stop an agent. AgentGuard knows when to — and proves it.*
+> *Anyone can stop an agent. Headroom knows when to — and proves it.*
 
 > **★ The research apex — "Oversight Has a Capacity"** (full detail → [`docs/RESEARCH.md`](docs/RESEARCH.md)). The deepest version of the thesis: the human reviewer is not a perfect oracle — they are **subjective** (no ground-truth "safe" label; measured Fleiss' κ ≈ 0.52) and **endogenous** (escalation fatigues them). So the optimal *when-to-escalate* policy is **load-aware**, and realized safety is an **inverted-U**: *more human oversight can make a system **less** safe, and the safety-optimal guard escalates **below** capacity.* This is *selective classification under asymmetric cost with noisy labels **and an endogenous expert***. **Verified prior art:** the endogenous-fatiguing-expert + load-aware deferral is [FALCON](https://arxiv.org/html/2604.00904) / [DeCCaF](https://arxiv.org/abs/2403.06906); the flooding attack is SOC alert-fatigue literature. **We don't claim the theory** — our contribution is the open-source system + the measurement (calibration, noise floor, the demonstrations). Applies only where the label is subjective, e.g. agent oversight — **not** where there's ground truth like banking.
 
@@ -29,7 +29,7 @@ The MVP is the foundation. Each stage above it adds **one capability** that make
 
 ## Stage 0 — Foundation (MVP) · *the brakes work*
 
-A real worker LLM proposes tool calls; a real guardian (deterministic rules → one LLM judge for the ambiguous middle) classifies each as **safe / approval-required / blocked**; risky actions pause the LangGraph run via `interrupt()` and wait for a human; every decision is audit-logged; a guardian eval prints real metrics; AgentGuard is exposed as an **MCP server (built — `agentguard/mcp_server.py`, demo `scripts/mcp_demo.py`)** — the policy engine is the server, any MCP-aware agent (Claude Code, Cursor, custom LangGraph) is the client, so adoption is ~4 lines of config rather than a LangGraph rewrite. The `interrupt()` loop stays the deep HITL artifact; MCP is the *reach surface* on top of it, not a replacement.
+A real worker LLM proposes tool calls; a real guardian (deterministic rules → one LLM judge for the ambiguous middle) classifies each as **safe / approval-required / blocked**; risky actions pause the LangGraph run via `interrupt()` and wait for a human; every decision is audit-logged; a guardian eval prints real metrics; Headroom is exposed as an **MCP server (built — `headroom/mcp_server.py`, demo `scripts/mcp_demo.py`)** — the policy engine is the server, any MCP-aware agent (Claude Code, Cursor, custom LangGraph) is the client, so adoption is ~4 lines of config rather than a LangGraph rewrite. The `interrupt()` loop stays the deep HITL artifact; MCP is the *reach surface* on top of it, not a replacement.
 
 **Why it matters:** establishes the full control loop — every action is classified, and risky ones cannot execute without a human in the loop. The same engine is protocol-native ("safety layer for any MCP-compatible agent"), broadening reach without new work.
 **Honest limit:** an approval gate on its own is becoming common; the depth, and the differentiation, lives in the stages below. MCP is a transport, not the algorithmic depth — it complements the Stage 1 eval rather than substituting for it.
@@ -74,7 +74,7 @@ Cost is kept low by design — see [`docs/EVAL.md`](docs/EVAL.md) (caching · Me
 
 **Cross-cutting, and the most foundational concern of all.** A control plane is only as
 strong as the actions it actually *sees* — an action that never reaches the guardian is, by
-definition, unguarded. Being an MCP server gives AgentGuard **reach** (any compatible agent
+definition, unguarded. Being an MCP server gives Headroom **reach** (any compatible agent
 *can* route through it); it does **not** give **enforcement**. Enforcement comes from
 **owning the chokepoint — being the sole path to the capability**, the way a firewall owns the
 wire. The **operator** configures this on their *own* agent (they want the brakes); the
@@ -86,14 +86,14 @@ evades their own safety tool."
 
 | Level | Mechanism | How the operator wires it | Strength · coverage |
 |---|---|---|---|
-| **1 · Cooperative** | AgentGuard is one MCP server among many; the agent is *asked* to submit actions | Add AgentGuard to the host's `mcpServers` config | Weak — the agent can call other tools directly |
-| **2 · MCP gateway** | AgentGuard is the **only** MCP server the host talks to; the real tool servers sit **behind** it and only approved calls are forwarded | Point the host at AgentGuard alone; list the real servers as AgentGuard's *downstream*, removing their direct host entries | Strong **for MCP tools** — the only path to them |
-| **3 · Host hook** | The host calls AgentGuard before **every** tool, built-ins included (e.g. Claude Code `PreToolUse`) | Enable AgentGuard's hook in the host's settings | Strong — *all* tools on that host, MCP or native |
-| **4 · Capability / sandbox** | The agent runs sandboxed *without* the real fs / net / deploy capability; AgentGuard mediates the syscall | Run the agent inside AgentGuard's sandbox (Stage 2) | **True no-bypass** — the OS enforces it |
+| **1 · Cooperative** | Headroom is one MCP server among many; the agent is *asked* to submit actions | Add Headroom to the host's `mcpServers` config | Weak — the agent can call other tools directly |
+| **2 · MCP gateway** | Headroom is the **only** MCP server the host talks to; the real tool servers sit **behind** it and only approved calls are forwarded | Point the host at Headroom alone; list the real servers as Headroom's *downstream*, removing their direct host entries | Strong **for MCP tools** — the only path to them |
+| **3 · Host hook** | The host calls Headroom before **every** tool, built-ins included (e.g. Claude Code `PreToolUse`) | Enable Headroom's hook in the host's settings | Strong — *all* tools on that host, MCP or native |
+| **4 · Capability / sandbox** | The agent runs sandboxed *without* the real fs / net / deploy capability; Headroom mediates the syscall | Run the agent inside Headroom's sandbox (Stage 2) | **True no-bypass** — the OS enforces it |
 
 **What it adds**
 - A named **threat model** (unseen action = unguarded action) and a concrete enforcement path.
-- The demoable headline: **Claude Code gated by a `PreToolUse` hook** (Level 3 — a real, well-known agent that physically cannot act without clearing the gate) and an **MCP gateway** demo (Level 2 — the agent's only door to its tools is AgentGuard).
+- The demoable headline: **Claude Code gated by a `PreToolUse` hook** (Level 3 — a real, well-known agent that physically cannot act without clearing the gate) and an **MCP gateway** demo (Level 2 — the agent's only door to its tools is Headroom).
 
 **Why it matters:** this is the line between a *suggestion* and a *firewall*. No-bypass is the
 foundation every other guarantee rests on — robustness, audit, and approval all assume the
@@ -145,7 +145,7 @@ One guardian policy plane; many workers.
 - **Policy-as-data per repo/team**; **a self-improving policy plane** — the guardian closes the loop on its own history rather than staying a static ruleset: it adapts thresholds from the human approve/reject record (which actions a reviewer always waves through vs. always blocks), and a Claude pass reads the audit log + adversarial misses to *propose* new rules and hardening, re-evaluated before they ship. The gate learns from every human decision and every attack it let slip.
 
 **Why it matters:** one policy plane governing many agents is the step from a tool to a platform — and a gate that *improves itself* from its own audit trail is the step from a fixed filter to a control system.
-**Prior art:** the meta-agent → target-agent → feedback-agent loop in [SIA](https://github.com/hexo-ai/sia) (a self-improving agent framework) is structurally the same loop. The cross-ecosystem mapping: SIA improves an agent to be better at a *task*; AgentGuard applies the same loop to make the *guard* better at *judging risk* — with the calibration eval's misses and false-alarms as the feedback signal. Same loop, different objective (safety policy, not task performance).
+**Prior art:** the meta-agent → target-agent → feedback-agent loop in [SIA](https://github.com/hexo-ai/sia) (a self-improving agent framework) is structurally the same loop. The cross-ecosystem mapping: SIA improves an agent to be better at a *task*; Headroom applies the same loop to make the *guard* better at *judging risk* — with the calibration eval's misses and false-alarms as the feedback signal. Same loop, different objective (safety policy, not task performance).
 
 ---
 

@@ -6,7 +6,7 @@ System architecture reference. Update when structure changes meaningfully.
 
 ## What This Is
 
-AgentGuard is a human-in-the-loop execution firewall for AI coding agents. A **worker LLM agent** proposes tool calls; a **guardian agent** (deterministic rules + LLM risk judgment) classifies each as *safe / approval-required / blocked*; risky actions **pause the LangGraph run via `interrupt()`** and wait for human approval; every decision is written to an **append-only audit log** and shown on a live dashboard.
+Headroom is a human-in-the-loop execution firewall for AI coding agents. A **worker LLM agent** proposes tool calls; a **guardian agent** (deterministic rules + LLM risk judgment) classifies each as *safe / approval-required / blocked*; risky actions **pause the LangGraph run via `interrupt()`** and wait for human approval; every decision is written to an **append-only audit log** and shown on a live dashboard.
 
 ## Stack
 
@@ -23,7 +23,7 @@ AgentGuard is a human-in-the-loop execution firewall for AI coding agents. A **w
 ## Directory Structure
 
 ```
-agentguard/
+headroom/
   types.py             # ProposedAction, Verdict, ActionKind (Pydantic)
   policy/
     rules.py           # ordered deterministic ruleset (policy-as-data)

@@ -20,7 +20,7 @@ import os
 from collections.abc import Callable
 from pathlib import Path
 
-from agentguard.types import ProposedAction
+from headroom.types import ProposedAction
 
 from .run_eval import _action, load_dataset
 
@@ -146,7 +146,7 @@ def run(records: list[dict], labelers: list[tuple[str, Labeler]]) -> dict:
 
 def _print_report(result: dict) -> None:
     print("\n" + "=" * 66)
-    print("  AgentGuard noise floor — inter-annotator agreement (LLM-persona PROXY)")
+    print("  Headroom noise floor — inter-annotator agreement (LLM-persona PROXY)")
     print("=" * 66)
     print(f"  dataset   : {result['n']} actions x {len(result['personas'])} personas")
     print(f"  personas  : {', '.join(result['personas'])}")
