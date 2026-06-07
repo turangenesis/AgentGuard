@@ -34,8 +34,9 @@ dist/
 build/
 out/
 
-# arXiv source bundle — regenerated from paper/ (main.tex + refs.bib + figures); rebuild it, don't commit
+# arXiv source bundle(s) — regenerated from paper/ (main.tex + refs.bib + figures); rebuild, don't commit
 paper_submission.zip
+paper/*.zip
 
 # Editor
 .vscode/settings.json
