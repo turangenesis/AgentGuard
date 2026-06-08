@@ -178,11 +178,11 @@ we instantiate and measure this in the agent-action setting rather than introduc
 ## 4. Methods
 
 **Dataset.** 125 hand-labeled agent actions (`eval/dataset.jsonl`), deliberately weighted to *hard*
-cases: 54 ambiguous-middle (e.g. `npm install <pkg>`, edit `package.json`, `git rebase`, deploy to
+cases, including 54 ambiguous-middle (e.g. `npm install <pkg>`, edit `package.json`, `git rebase`, deploy to
 *staging*), 23 obfuscated/adversarial (base64-encoded `rm -rf`, homoglyph `maín`, path traversal,
 secret exfiltration, pipe-to-shell), and 16 scary-*looking* cases (12 genuinely benign false-alarm
 traps (`rm -rf node_modules`, read `.env.example`); and 4 that look alarming *and* warrant approval,
-e.g. `git reset --hard` of unpushed work). Labels: SAFE 42 / APPROVAL 52 / BLOCKED 31. A small,
+e.g. `git reset --hard` of unpushed work), alongside clearer allow/block cases that anchor the easy end. Labels: SAFE 42 / APPROVAL 52 / BLOCKED 31. A small,
 curated set, reported as such, not a published benchmark. **Gold-label provenance:** the labels are
 one author's judgments, used as a single measurement reference throughout. This is in deliberate
 tension with our own noise floor (§5.2): Fleiss' κ = 0.52 quantifies how contestable that reference
@@ -297,8 +297,8 @@ The endogenous reviewer is not only a safety limit; it is an *attack surface*. A
 one malicious action in a stream of `k` benign "filler" actions; each escalated filler adds reviewer
 load, so by the time the malicious action is reviewed a fatigued reviewer rubber-stamps it. Under a
 naive **paranoid** policy, escalating 88% of routine actions (the measured false-alarm rate at
-`θ`=10), attack success climbs from 0 toward the rubber-stamp ceiling (~80%) as filler grows, and
-is already **40% at just 50 filler actions**. Under a **load-aware** policy — escalating 24% (the
+`θ`=10 for the canonical Haiku guard), attack success climbs from 0 toward the rubber-stamp ceiling (~80%) as filler grows, and
+is already **40% at just 50 filler actions**. Under a **load-aware** policy — escalating 26% (the
 `θ`=35 false-alarm rate) — the reviewer stays fresh and attack success **holds at 0% until the
 attacker's filler is large enough that even those few escalations exceed capacity** (≈100 actions
 here, ~2× the paranoid policy's headroom), after which it too bends upward (10% at k≈110, reaching

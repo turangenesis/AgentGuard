@@ -220,12 +220,12 @@ gold & auto-allow & escalate \\
 \section{Methods}\label{sec:methods}
 
 \paragraph{Dataset.} 125 hand-labeled agent actions (\texttt{eval/dataset.jsonl}), deliberately
-weighted to \emph{hard} cases: 54 ambiguous-middle (e.g.\ \texttt{npm install <pkg>}, edit
+weighted to \emph{hard} cases, including 54 ambiguous-middle (e.g.\ \texttt{npm install <pkg>}, edit
 \texttt{package.json}, \texttt{git rebase}, deploy to \emph{staging}), 23 obfuscated/adversarial
 (base64-encoded \texttt{rm -rf}, homoglyph \texttt{ma\'{i}n}, path traversal, secret exfiltration,
 pipe-to-shell), and 16 scary-\emph{looking} cases (12 genuinely benign false-alarm traps:
 \texttt{rm -rf node\_modules}, read \texttt{.env.example}; and 4 that look alarming \emph{and} warrant
-approval, e.g.\ \texttt{git reset -{}-hard} of unpushed work). Labels: \textsc{safe} 42 /
+approval, e.g.\ \texttt{git reset -{}-hard} of unpushed work), alongside clearer allow/block cases that anchor the easy end. Labels: \textsc{safe} 42 /
 \textsc{approval} 52 / \textsc{blocked} 31. A small, curated set, reported as such, not a published
 benchmark. \textbf{Gold-label provenance:} the labels are one author's judgments, used as a single
 measurement reference throughout. This is in deliberate tension with our own noise floor
@@ -372,9 +372,9 @@ The endogenous reviewer is not only a safety limit --- it is an \emph{attack sur
 buries one malicious action in a stream of $k$ benign ``filler'' actions; each escalated filler adds
 reviewer load, so by the time the malicious action is reviewed a fatigued reviewer rubber-stamps it.
 Under a naive \textbf{paranoid} policy --- escalating 88\% of routine actions (the measured false-alarm
-rate at $\theta = 10$) --- attack success climbs from 0 toward the rubber-stamp ceiling ($\sim$80\%)
+rate at $\theta = 10$ for the canonical Haiku guard) --- attack success climbs from 0 toward the rubber-stamp ceiling ($\sim$80\%)
 as filler grows, and is already \textbf{40\% at just 50 filler actions}. Under a \textbf{load-aware}
-policy --- escalating 24\% (the $\theta = 35$ false-alarm rate) --- the reviewer stays fresh and attack
+policy --- escalating 26\% (the $\theta = 35$ false-alarm rate) --- the reviewer stays fresh and attack
 success \textbf{holds at 0\% until the attacker's filler is large enough that even those few
 escalations exceed capacity} ($\approx$100 actions here, $\sim$2$\times$ the paranoid policy's
 headroom), after which it too bends upward (10\% at $k \approx 110$, reaching the same ceiling by
